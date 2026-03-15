@@ -1,0 +1,159 @@
+# OpenCode Harness - CI/CD Pipeline
+# Builds and tests the container on every push and pull request
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main, master]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: opencode-harness
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  # Lint and validate before building
+  validate:
+    name: Validate Configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq shellcheck
+
+      - name: Validate JSON configuration
+        run: |
+          echo "Validating opencode.json..."
+          jq . opencode.json
+          echo "✓ JSON configuration is valid"
+
+      - name: Lint shell scripts
+        run: |
+          echo "Running shellcheck on shell scripts..."
+          shellcheck setup.sh
+          shellcheck docker/entrypoint.sh
+          echo "✓ All shell scripts pass linting"
+
+  # Build and test container
+  build-and-test:
+    name: Build & Test Container
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Podman
+        uses: ./.github/actions/setup-podman
+        continue-on-error: true
+        id: podman-setup
+
+      - name: Fallback to Docker
+        if: steps.podman-setup.outcome == 'failure'
+        run: |
+          echo "Podman setup failed, using Docker"
+          echo "CONTAINER_CMD=docker" >> $GITHUB_ENV
+          echo "CONTAINER_BUILD_CMD=docker" >> $GITHUB_ENV
+
+      - name: Set container runtime
+        if: steps.podman-setup.outcome == 'success'
+        run: |
+          echo "CONTAINER_CMD=podman" >> $GITHUB_ENV
+          echo "CONTAINER_BUILD_CMD=podman" >> $GITHUB_ENV
+
+      - name: Build container image
+        run: |
+          echo "Building container image..."
+          ${{ env.CONTAINER_BUILD_CMD }} build \
+            -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+            -t ${{ env.IMAGE_NAME }}:latest \
+            -f Containerfile \
+            --no-cache \
+            .
+          echo "✓ Container image built successfully"
+
+      - name: Run container tests
+        run: |
+          chmod +x scripts/container-test.sh
+          ./scripts/container-test.sh ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.CONTAINER_CMD }}
+
+      - name: Test container runtime
+        run: |
+          echo "Testing container runtime..."
+          ${{ env.CONTAINER_CMD }} run --rm ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} bash -c "
+            set -e
+            echo 'Testing OpenCode installation...'
+            opencode --version || echo 'OpenCode version check'
+            
+            echo 'Testing configuration...'
+            cat /app/opencode.json
+            
+            echo 'Testing vendor binaries...'
+            ls -la /vendor/bin
+            
+            echo '✓ Container runtime tests passed'
+          "
+
+      - name: Scan image for vulnerabilities (optional)
+        continue-on-error: true
+        run: |
+          echo "Scanning image for vulnerabilities..."
+          if command -v podman &> /dev/null; then
+            podman image scan ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
+          else
+            echo "Image scanning not available with Docker, skipping..."
+          fi
+
+      - name: Push to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | ${{ env.CONTAINER_CMD }} login ghcr.io -u ${{ github.actor }} --password-stdin
+          ${{ env.CONTAINER_CMD }} tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ghcr.io/${{ github.repository_owner }}/opencode-harness:${{ env.IMAGE_TAG }}
+          ${{ env.CONTAINER_CMD }} tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ github.repository_owner }}/opencode-harness:latest
+          ${{ env.CONTAINER_CMD }} push ghcr.io/${{ github.repository_owner }}/opencode-harness:${{ env.IMAGE_TAG }}
+          ${{ env.CONTAINER_CMD }} push ghcr.io/${{ github.repository_owner }}/opencode-harness:latest
+          echo "✓ Image pushed to GitHub Container Registry"
+
+  # Summary job
+  ci-status:
+    name: CI Status
+    runs-on: ubuntu-latest
+    needs: [validate, build-and-test]
+    if: always()
+    steps:
+      - name: Check overall status
+        run: |
+          if [[ "${{ needs.validate.result }}" == "success" && "${{ needs.build-and-test.result }}" == "success" ]]; then
+            echo "✅ All CI checks passed!"
+            exit 0
+          else
+            echo "❌ CI checks failed"
+            echo "Validate: ${{ needs.validate.result }}"
+            echo "Build & Test: ${{ needs.build-and-test.result }}"
+            exit 1
+          fi

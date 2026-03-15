@@ -14,6 +14,11 @@ The harness automates configuration, provides containerized environments, and st
 
 ```text
 opencode-harness/
+├── .github/                    # GitHub configuration
+│   ├── workflows/              # CI/CD workflows
+│   │   └── ci.yml              # Main CI pipeline
+│   └── actions/                # Composite actions
+│       └── setup-podman/       # Podman installation action
 ├── modules/                    # Git submodules (OpenCode plugins)
 │   ├── everything-claude-code/ # 16 agents, 65 skills, 40 commands
 │   ├── oh-my-openagent/       # Multi-agent system with Sisyphus orchestrator
@@ -22,6 +27,9 @@ opencode-harness/
 │   ├── Containerfile          # Main container definition
 │   ├── AGENTS.md             # Container-specific agent instructions
 │   └── entrypoint.sh          # Container entrypoint
+├── scripts/                   # Automation scripts
+│   ├── container-test.sh      # Container verification tests
+│   └── validate.sh            # Pre-build validation
 ├── setup.sh                   # Host bootstrap script
 ├── opencode.json             # OpenCode plugin configuration
 ├── .gitignore                # Git exclusions
@@ -84,6 +92,33 @@ git submodule status
 
 # Test container build
 podman build --no-cache -t opencode-harness -f Containerfile .
+```
+
+### CI/CD
+
+```bash
+# Run pre-build validation (same as CI validate job)
+./scripts/validate.sh
+
+# Run container test suite (same as CI test job)
+./scripts/container-test.sh opencode-harness:latest
+
+# Run container test suite with Docker
+./scripts/container-test.sh opencode-harness:latest docker
+
+# Build and test like CI
+podman build -t opencode-harness:ci -f Containerfile .
+./scripts/container-test.sh opencode-harness:ci
+```
+
+### Container Registry
+
+```bash
+# Pull pre-built container from GitHub Container Registry
+podman pull ghcr.io/tankdonut/opencode-harness:latest
+
+# Run pre-built container
+podman run -it --rm ghcr.io/tankdonut/opencode-harness:latest
 ```
 
 ## Agent Persona
@@ -252,21 +287,23 @@ git commit -m "chore: update <name> submodule"
 ## Testing Your Changes
 
 ```bash
-# 1. Validate config files
-jq . opencode.json
-shellcheck setup.sh docker/entrypoint.sh
+# 1. Run pre-build validation
+./scripts/validate.sh
 
 # 2. Test container build
 podman build --no-cache -t opencode-harness-test -f Containerfile .
 
-# 3. Test container runtime
+# 3. Run container test suite
+./scripts/container-test.sh opencode-harness-test
+
+# 4. Test container runtime manually
 podman run -it --rm opencode-harness-test bash -c "
     opencode --version && \
     ls -la /vendor/bin && \
     echo 'Container bootstrap OK'
 "
 
-# 4. Test host setup (in clean environment if possible)
+# 5. Test host setup (in clean environment if possible)
 ./setup.sh --dry-run  # If dry-run flag exists
 ```
 

@@ -54,13 +54,13 @@ opencode-harness/
 
 ```bash
 # Build with Podman (preferred)
-podman build -t opencode-harness -f docker/Containerfile .
+podman build -t opencode-harness -f Containerfile .
 
 # Build with Docker
-docker build -t opencode-harness -f docker/Containerfile .
+docker build -t opencode-harness -f Containerfile .
 
 # Build without cache (clean rebuild)
-podman build --no-cache -t opencode-harness -f docker/Containerfile .
+podman build --no-cache -t opencode-harness -f Containerfile .
 
 # Scan for vulnerabilities
 podman image scan opencode-harness
@@ -80,6 +80,23 @@ podman run -it --rm opencode-harness bash -c "cat /app/opencode.json && ls -la /
 
 # Test with mounted workspace
 podman run -it --rm -v $(pwd):/workspace opencode-harness bash
+
+# Run comprehensive test suite
+./scripts/container-test.sh opencode-harness:latest
+```
+
+### CI/CD Commands
+
+```bash
+# Run pre-build validation (same as CI)
+./scripts/validate.sh
+
+# Build and test like CI
+podman build -t opencode-harness:ci -f Containerfile .
+./scripts/container-test.sh opencode-harness:ci
+
+# Pull pre-built container from registry
+podman pull ghcr.io/tankdonut/opencode-harness:latest
 ```
 
 ### Debug Commands
@@ -92,7 +109,7 @@ podman history opencode-harness
 podman images opencode-harness
 
 # View build logs
-podman build -t opencode-harness -f docker/Containerfile . 2>&1 | tee build.log
+podman build -t opencode-harness -f Containerfile . 2>&1 | tee build.log
 ```
 
 ## Container Best Practices
@@ -230,13 +247,16 @@ Before committing container changes:
 ## Testing Your Changes
 
 ```bash
-# 1. Validate syntax
-shellcheck docker/entrypoint.sh
+# 1. Run pre-build validation
+./scripts/validate.sh
 
 # 2. Build image
-podman build --no-cache -t opencode-harness-test -f docker/Containerfile .
+podman build --no-cache -t opencode-harness-test -f Containerfile .
 
-# 3. Test OpenCode installation
+# 3. Run comprehensive test suite
+./scripts/container-test.sh opencode-harness-test
+
+# 4. Test OpenCode installation manually
 podman run -it --rm opencode-harness-test bash -c "
     set -e
     opencode --version
@@ -245,13 +265,13 @@ podman run -it --rm opencode-harness-test bash -c "
     echo 'All checks passed'
 "
 
-# 4. Test with workspace mount
+# 5. Test with workspace mount
 mkdir -p /tmp/test-workspace
 podman run -it --rm \
     -v /tmp/test-workspace:/workspace \
     opencode-harness-test bash -c "cd /workspace && pwd && ls -la"
 
-# 5. Scan for vulnerabilities
+# 6. Scan for vulnerabilities
 podman image scan opencode-harness-test
 ```
 

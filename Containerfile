@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     npm \
  && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -m -u 1000 -s /bin/bash opencode
+RUN useradd -m -u 10001 -s /bin/bash opencode || useradd -m -s /bin/bash opencode
 
 COPY --from=tools /dist/ /vendor/bin/
 

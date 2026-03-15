@@ -1,5 +1,9 @@
 # OpenCode Harness
 
+[![CI](https://github.com/tankdonut/opencode-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/tankdonut/opencode-harness/actions/workflows/ci.yml)
+[![Container](https://img.shields.io/badge/container-ghcr.io-blue)](https://github.com/tankdonut/opencode-harness/pkgs/container/opencode-harness)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 A comprehensive harness for bootstrapping OpenCode environments with production-ready agents, skills, and commands. Includes containerized deployment for consistent, reproducible setups.
 
 ## Overview
@@ -17,6 +21,7 @@ This harness provides:
 - ✅ Containerized deployments (Podman/Docker)
 - ✅ Comprehensive agent instructions via AGENTS.md
 - ✅ Git submodule management for easy updates
+- ✅ **CI/CD automation with container build, test, and validation**
 
 ## Quick Start
 
@@ -48,6 +53,11 @@ podman run -it --rm opencode-harness
 
 ```
 opencode-harness/
+├── .github/                    # GitHub configuration
+│   ├── workflows/              # CI/CD workflows
+│   │   └── ci.yml              # Main CI pipeline
+│   └── actions/                # Composite actions
+│       └── setup-podman/       # Podman installation action
 ├── modules/                    # Git submodules (OpenCode plugins)
 │   ├── everything-claude-code/ # Production agents, skills, commands
 │   ├── oh-my-openagent/       # Multi-agent orchestration
@@ -56,6 +66,9 @@ opencode-harness/
 │   ├── Containerfile          # Image definition
 │   ├── AGENTS.md             # Container-specific instructions
 │   └── entrypoint.sh         # Container entrypoint
+├── scripts/                   # Automation scripts
+│   ├── container-test.sh      # Container verification tests
+│   └── validate.sh            # Pre-build validation
 ├── setup.sh                   # Host bootstrap script
 ├── opencode.json             # Plugin configuration
 ├── AGENTS.md                 # Agent instructions
@@ -282,6 +295,21 @@ jq . opencode.json
 
 ## Development
 
+### Local Testing
+
+Run validation and container tests locally before pushing:
+
+```bash
+# Validate configuration and scripts
+./scripts/validate.sh
+
+# Build container
+podman build -t opencode-harness:test -f Containerfile .
+
+# Run container test suite
+./scripts/container-test.sh opencode-harness:test
+```
+
 ### Testing Container Changes
 
 1. **Build without cache**:
@@ -299,7 +327,12 @@ jq . opencode.json
    "
    ```
 
-3. **Scan for vulnerabilities**:
+3. **Run comprehensive test suite**:
+   ```bash
+   ./scripts/container-test.sh opencode-harness-test
+   ```
+
+4. **Scan for vulnerabilities**:
    ```bash
    podman image scan opencode-harness-test
    ```
@@ -307,21 +340,62 @@ jq . opencode.json
 ### Validating Configuration
 
 ```bash
+# Run all validations
+./scripts/validate.sh
+
+# Or manually
 jq . opencode.json
-shellcheck setup.sh docker/entrypoint.sh
+shellcheck setup.sh docker/entrypoint.sh scripts/*.sh
 ```
 
 ### Git Workflow
 
 1. Make changes
-2. Test in container
-3. Validate configs
+2. Run validation: `./scripts/validate.sh`
+3. Build and test: `podman build -t test -f Containerfile . && ./scripts/container-test.sh test`
 4. Commit with conventional commits:
    ```bash
    git commit -m "feat: add new plugin"
    git commit -m "fix: resolve submodule issue"
    git commit -m "chore: update dependencies"
    ```
+
+## CI/CD
+
+This project includes automated CI/CD via GitHub Actions:
+
+### Pipeline Stages
+
+1. **Validate** - Lints shell scripts, validates JSON configuration
+2. **Build** - Builds the container image with Podman/Docker
+3. **Test** - Runs the container test suite
+4. **Push** - Pushes image to GitHub Container Registry (main branch only)
+
+### Running CI Locally
+
+```bash
+# Run the same validations as CI
+./scripts/validate.sh
+
+# Build and test like CI does
+podman build -t opencode-harness:ci -f Containerfile .
+./scripts/container-test.sh opencode-harness:ci podman
+```
+
+### Using Pre-built Container
+
+Pull the latest container from GitHub Container Registry:
+
+```bash
+podman pull ghcr.io/tankdonut/opencode-harness:latest
+podman run -it --rm ghcr.io/tankdonut/opencode-harness:latest
+```
+
+### CI Configuration
+
+- Workflow: `.github/workflows/ci.yml`
+- Test script: `scripts/container-test.sh`
+- Validation: `scripts/validate.sh`
 
 ## AGENTS.md Files
 
