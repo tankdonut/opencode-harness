@@ -1,9 +1,9 @@
-# Docker Container - Agent Instructions
-
 ---
 name: container-engineer
 description: Container engineering specialist for OpenCode harness
 ---
+
+# Docker Container - Agent Instructions
 
 ## Overview
 
@@ -25,7 +25,8 @@ This directory (`docker/`) contains all container-specific files:
 - **AGENTS.md**: This file - container-specific agent instructions
 
 Parent project structure:
-```
+
+```text
 opencode-harness/
 ├── modules/                    # Git submodules (plugins)
 │   ├── everything-claude-code/
@@ -149,12 +150,12 @@ log() {
 
 install_opencode() {
     log "Installing OpenCode ${OPENCODE_VERSION}..."
-    
+
     if command -v opencode &>/dev/null; then
         log "OpenCode already installed, skipping"
         return 0
     fi
-    
+
     npm install -g "opencode@${OPENCODE_VERSION}"
 }
 
@@ -163,7 +164,7 @@ validate_config() {
         log "Error: Config file not found at $CONFIG_PATH"
         return 1
     fi
-    
+
     jq empty "$CONFIG_PATH" || {
         log "Error: Invalid JSON in $CONFIG_PATH"
         return 1
