@@ -1,0 +1,9 @@
+[submodule "modules/everything-claude-code"]
+	path = modules/everything-claude-code
+	url = https://github.com/affaan-m/everything-claude-code
+[submodule "modules/superpowers"]
+	path = modules/superpowers
+	url = https://github.com/obra/superpowers
+[submodule "modules/oh-my-openagent"]
+	path = modules/oh-my-openagent
+	url = https://github.com/code-yeongyu/oh-my-openagent
