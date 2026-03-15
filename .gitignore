@@ -1,0 +1,85 @@
+# OpenCode Harness - Gitignore
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.vim/
+*.sublime-project
+*.sublime-workspace
+
+# OpenCode Runtime
+.opencode/.cache/
+.opencode/.sessions/
+.opencode/.temp/
+.opencode/session-*.json
+.sisyphus/
+
+# Container Runtime
+*.log
+*.pid
+.container-runtime/
+docker/*.log
+docker/.env.local
+
+# Build Artifacts
+dist/
+build/
+*.tar
+*.tar.gz
+*.zip
+
+# Dependency directories
+node_modules/
+.npm/
+.yarn/
+.pnpm-store/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+env/
+ENV/
+
+# Secrets and Credentials
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p12
+credentials.json
+secrets.yaml
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.bak
+*.old
+
+# Test Coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Keep structure but ignore test fixtures
+local-ignore/
+
+# Keep example files
+!examples/**
