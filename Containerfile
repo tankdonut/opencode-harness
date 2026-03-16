@@ -26,7 +26,7 @@ WORKDIR /app
 COPY --chown=opencode:opencode opencode.json /app/opencode.json
 COPY --chown=opencode:opencode etc/opencode/opencode.jsonc /etc/opencode/opencode.jsonc
 COPY --chown=opencode:opencode modules/ /app/modules/
-COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint
+COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 ENV PATH="/vendor/bin:${PATH}" \
     OPENCODE_CONFIG="/app/opencode.json" \
@@ -34,6 +34,7 @@ ENV PATH="/vendor/bin:${PATH}" \
 
 USER opencode
 
-RUN /usr/local/bin/entrypoint
+RUN /usr/local/bin/entrypoint.sh
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/bin/bash"]
