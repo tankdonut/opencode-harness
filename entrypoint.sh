@@ -46,7 +46,7 @@ validate_environment() {
     log "Validating environment..."
     
     # Check required commands
-    local required_cmds=("git" "node" "npm")
+    local required_cmds=("git" "node" "npm" "curl" "jq" "python3" "pip3" "yq")
     for cmd in "${required_cmds[@]}"; do
         if ! command_exists "$cmd"; then
             log_error "Required command not found: $cmd"
