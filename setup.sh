@@ -40,7 +40,7 @@ command_exists() {
 check_prerequisites() {
     log "Checking prerequisites..."
     
-    local required_cmds=("git" "node" "npm")
+    local required_cmds=("git" "node" "npm" "curl" "jq")
     local missing_cmds=()
     
     for cmd in "${required_cmds[@]}"; do
@@ -60,15 +60,15 @@ check_prerequisites() {
                 node|npm)
                     log_info "  - Node.js (includes npm): https://nodejs.org/"
                     ;;
+                curl)
+                    log_info "  - curl: usually pre-installed, or via package manager"
+                    ;;
+                jq)
+                    log_info "  - jq: https://jqlang.github.io/jq/download/"
+                    ;;
             esac
         done
         return 1
-    fi
-    
-    if command_exists jq; then
-        log_success "Optional dependency 'jq' found (recommended for JSON validation)"
-    else
-        log_warn "Optional dependency 'jq' not found (JSON validation will be skipped)"
     fi
     
     log_success "All required prerequisites found"
@@ -77,6 +77,8 @@ check_prerequisites() {
     log_info "  - Git: $(git --version | head -n1)"
     log_info "  - Node: $(node --version)"
     log_info "  - npm: $(npm --version)"
+    log_info "  - curl: $(curl --version | head -n1)"
+    log_info "  - jq: $(jq --version)"
 }
 
 init_submodules() {
@@ -115,23 +117,19 @@ validate_config() {
         return 1
     fi
     
-    if command_exists jq; then
-        if ! jq empty "$CONFIG_PATH" 2>/dev/null; then
-            log_error "Invalid JSON syntax in $CONFIG_PATH"
-            return 1
-        fi
-        
-        local plugin_count
-        plugin_count=$(jq '.plugin | length' "$CONFIG_PATH" 2>/dev/null || echo "0")
-        log_success "Configuration valid - ${plugin_count} plugins configured"
-        
-        log_info "Configured plugins:"
-        jq -r '.plugin[]' "$CONFIG_PATH" 2>/dev/null | while read -r plugin; do
-            log_info "  - ${plugin}"
-        done
-    else
-        log_warn "Skipping JSON validation (jq not available)"
+    if ! jq empty "$CONFIG_PATH" 2>/dev/null; then
+        log_error "Invalid JSON syntax in $CONFIG_PATH"
+        return 1
     fi
+    
+    local plugin_count
+    plugin_count=$(jq '.plugin | length' "$CONFIG_PATH" 2>/dev/null || echo "0")
+    log_success "Configuration valid - ${plugin_count} plugins configured"
+    
+    log_info "Configured plugins:"
+    jq -r '.plugin[]' "$CONFIG_PATH" 2>/dev/null | while read -r plugin; do
+        log_info "  - ${plugin}"
+    done
 }
 
 install_opencode() {
