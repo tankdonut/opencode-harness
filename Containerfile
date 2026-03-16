@@ -96,8 +96,5 @@ LABEL org.opencontainers.image.title="OpenCode Harness" \
 
 USER opencode
 
-# Run entrypoint to initialize submodules and verify setup
-RUN /usr/local/bin/entrypoint.sh
-
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/bin/bash"]
