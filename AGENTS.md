@@ -23,18 +23,19 @@ opencode-harness/
 │   ├── everything-claude-code/ # 16 agents, 65 skills, 40 commands
 │   ├── oh-my-openagent/       # Multi-agent system with Sisyphus orchestrator
 │   └── superpowers/           # Workflow skills (TDD, debugging, git)
-├── docker/                    # Container configuration
-│   ├── Containerfile          # Main container definition
-│   ├── AGENTS.md             # Container-specific agent instructions
-│   └── entrypoint.sh          # Container entrypoint
-├── scripts/                   # Automation scripts
-│   ├── container-test.sh      # Container verification tests
-│   └── validate.sh            # Pre-build validation
-├── setup.sh                   # Host bootstrap script
-├── opencode.json             # OpenCode plugin configuration
-├── .gitignore                # Git exclusions
-├── AGENTS.md                 # This file
-└── README.md                 # Project documentation
+├── etc/                        # Configuration files
+│   └── opencode/               # OpenCode system config
+│       └── opencode.jsonc      # Container-specific OpenCode config
+├── scripts/                    # Automation scripts
+│   ├── container-test.sh       # Container verification tests
+│   └── validate.sh             # Pre-build validation
+├── Containerfile               # Main container definition
+├── entrypoint.sh               # Container entrypoint
+├── setup.sh                    # Host bootstrap script
+├── opencode.json               # OpenCode plugin configuration
+├── .gitignore                  # Git exclusions
+├── AGENTS.md                   # This file
+└── README.md                   # Project documentation
 ```
 
 ## Tech Stack
@@ -121,6 +122,22 @@ podman pull ghcr.io/tankdonut/opencode-harness:latest
 podman run -it --rm ghcr.io/tankdonut/opencode-harness:latest
 ```
 
+### Debug Commands
+
+```bash
+# Inspect image layers
+podman history opencode-harness
+
+# Check image size
+podman images opencode-harness
+
+# View build logs
+podman build -t opencode-harness -f Containerfile . 2>&1 | tee build.log
+
+# Scan for vulnerabilities
+podman image scan opencode-harness
+```
+
 ## Agent Persona
 
 You are an **OpenCode Harness Engineer** specializing in:
@@ -181,12 +198,15 @@ RUN apt-get update && apt-get install -y \
 # Copy pre-built tools
 COPY --from=tools /dist/ /vendor/bin
 
+# Copy configuration
+COPY etc/opencode/opencode.jsonc /etc/opencode/opencode.jsonc
+
 ENV PATH="/vendor/bin:${PATH}"
 
 # ❌ Bad - no version pinning, unclear purpose
 FROM ubuntu
 RUN apt-get install -y stuff
-COPY . /app
+COPY . .
 ```
 
 ### OpenCode Configuration (opencode.json)
@@ -220,6 +240,11 @@ jq . opencode.json
 - **Use `set -euo pipefail`** in all bash scripts
 - **Provide both Podman and Docker** commands (Podman preferred)
 - **Keep submodules at tagged releases** when possible (not random commits)
+- **Pin all versions** - base images, apt packages, npm packages
+- **Multi-stage builds** - Separate builder and runtime stages
+- **Clean up layers** - Remove apt cache, temporary files
+- **Run as non-root** - Create dedicated user, use `USER` directive
+- **Security scan** - Run `podman image scan` before releasing
 
 ### ⚠️ Ask First
 
@@ -227,6 +252,8 @@ jq . opencode.json
 - **Changing base container images** - affects reproducibility
 - **Adding new required dependencies** to Containerfile
 - **Restructuring directory layout** - impacts existing users
+- **Adding large dependencies** - Increases image size, slows pulls
+- **Modifying entrypoint logic** - May break existing deployments
 
 ### 🚫 Never Do
 
@@ -236,6 +263,10 @@ jq . opencode.json
 - **Use `git submodule update --remote` without testing** - can break on upstream changes
 - **Remove error handling** from shell scripts (`set -euo pipefail`)
 - **Commit `node_modules/` or `vendor/` directories**
+- **Commit secrets** - No API keys, tokens, passwords in Containerfile or entrypoint.sh
+- **Use `latest` tags** - Always pin versions (`ubuntu:24.04` not `ubuntu:latest`)
+- **Run as root** - Security risk, creates permission issues
+- **Install unnecessary tools** - Vim, nano, curl (unless required) bloat the image
 
 ## Workflow Patterns
 
@@ -250,7 +281,7 @@ jq . opencode.json
 
 ### Updating Container Bootstrap
 
-1. Edit `docker/entrypoint.sh` with new setup steps
+1. Edit `entrypoint.sh` with new setup steps
 2. Update `Containerfile` to call bootstrap script
 3. Build test: `podman build --no-cache -t test -f Containerfile .`
 4. Run test: `podman run -it --rm test bash -c "opencode --version"`
@@ -283,6 +314,20 @@ git commit -m "chore: update <name> submodule"
 - **Scan containers for vulnerabilities** - `podman image scan opencode-harness`
 - **Validate submodule URLs** - ensure they point to trusted sources
 - **Review upstream changes** before updating submodules
+- **No secrets in images** - API keys and credentials never committed or baked into images
+
+## Security Checklist
+
+Before committing container changes:
+
+- [ ] All base images use pinned tags (no `latest`)
+- [ ] Container runs as non-root user
+- [ ] No secrets in Containerfile, entrypoint.sh, or ENV vars
+- [ ] Apt cache cleaned (`rm -rf /var/lib/apt/lists/*`)
+- [ ] Unnecessary packages removed
+- [ ] Vulnerability scan passed (`podman image scan`)
+- [ ] Bootstrap script has error handling (`set -euo pipefail`)
+- [ ] OpenCode config validated (JSON syntax check)
 
 ## Testing Your Changes
 
@@ -300,11 +345,21 @@ podman build --no-cache -t opencode-harness-test -f Containerfile .
 podman run -it --rm opencode-harness-test bash -c "
     opencode --version && \
     ls -la /vendor/bin && \
+    test -f /etc/opencode/opencode.jsonc && echo '✓ System config present' && \
     echo 'Container bootstrap OK'
 "
 
-# 5. Test host setup (in clean environment if possible)
+# 5. Test with workspace mount
+mkdir -p /tmp/test-workspace
+podman run -it --rm \
+    -v /tmp/test-workspace:/workspace \
+    opencode-harness-test bash -c "cd /workspace && pwd && ls -la"
+
+# 6. Test host setup (in clean environment if possible)
 ./setup.sh --dry-run  # If dry-run flag exists
+
+# 7. Scan for vulnerabilities
+podman image scan opencode-harness-test
 ```
 
 ## Common Issues
@@ -334,6 +389,33 @@ jq . opencode.json
 # Verify plugin names match submodule directory names
 ```
 
+### Bootstrap Script Doesn't Run
+
+```bash
+# Symptom: Container starts but OpenCode not configured
+# Solution: Verify script is executable and ENTRYPOINT is set
+COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
+```
+
+### OpenCode Config Not Found
+
+```bash
+# Symptom: opencode.json missing in container
+# Solution: COPY it before running entrypoint
+COPY opencode.json /app/opencode.json
+RUN /usr/local/bin/entrypoint
+```
+
+### Permission Errors in Container
+
+```bash
+# Symptom: Can't write to /app or /workspace
+# Solution: Ensure files are owned by non-root user
+COPY --chown=opencode:opencode . /app
+USER opencode
+```
+
 ## Resources
 
 - [OpenCode Documentation](https://opencode.ai/docs)
@@ -341,8 +423,11 @@ jq . opencode.json
 - [Oh My OpenAgent](https://github.com/code-yeongyu/oh-my-openagent)
 - [Superpowers](https://github.com/obra/superpowers)
 - [Podman Documentation](https://docs.podman.io/)
+- [Docker Documentation](https://docs.docker.com/)
+- [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
 - [Git Submodules Guide](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+- [Ubuntu Container Images](https://hub.docker.com/_/ubuntu)
 
 ---
 
-**Remember**: This harness is about **reproducibility** and **ease of setup**. Every change should make it easier for teams to get a working OpenCode environment, not harder.
+**Remember**: This harness is about **reproducibility** and **ease of setup**. Every change should make it easier for teams to get a working OpenCode environment, not harder. Containers should be **minimal**, **secure**, and **reproducible**. Every line in the Containerfile should have a clear purpose.

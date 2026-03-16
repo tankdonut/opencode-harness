@@ -119,7 +119,7 @@ validate_shell_scripts() {
 
     local shell_scripts=(
         "${PROJECT_ROOT}/setup.sh"
-        "${PROJECT_ROOT}/docker/entrypoint.sh"
+        "${PROJECT_ROOT}/entrypoint.sh"
         "${PROJECT_ROOT}/scripts/container-test.sh"
         "${PROJECT_ROOT}/scripts/validate.sh"
     )
@@ -149,7 +149,7 @@ validate_permissions() {
 
     local executable_scripts=(
         "${PROJECT_ROOT}/setup.sh"
-        "${PROJECT_ROOT}/docker/entrypoint.sh"
+        "${PROJECT_ROOT}/entrypoint.sh"
     )
 
     for script in "${executable_scripts[@]}"; do
@@ -266,16 +266,18 @@ validate_structure() {
 
     local required_files=(
         "Containerfile"
+        "etc/opencode/opencode.jsonc"
         "opencode.json"
         "setup.sh"
-        "docker/entrypoint.sh"
+        "entrypoint.sh"
         "README.md"
         "AGENTS.md"
     )
 
     local required_dirs=(
-        "docker"
+        "etc"
         "modules"
+        "scripts"
     )
 
     for file in "${required_files[@]}"; do

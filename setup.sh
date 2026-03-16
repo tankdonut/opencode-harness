@@ -207,8 +207,7 @@ print_summary() {
     echo ""
     echo "Documentation:"
     echo "  - README.md - Project overview"
-    echo "  - AGENTS.md - Agent instructions"
-    echo "  - docker/AGENTS.md - Container-specific instructions"
+    echo "  - AGENTS.md - Agent and container instructions"
     echo ""
     echo "========================================="
 }

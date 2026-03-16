@@ -62,18 +62,19 @@ opencode-harness/
 │   ├── everything-claude-code/ # Production agents, skills, commands
 │   ├── oh-my-openagent/       # Multi-agent orchestration
 │   └── superpowers/           # Workflow skills
-├── docker/                    # Container configuration
-│   ├── Containerfile          # Image definition
-│   ├── AGENTS.md             # Container-specific instructions
-│   └── entrypoint.sh         # Container entrypoint
-├── scripts/                   # Automation scripts
-│   ├── container-test.sh      # Container verification tests
-│   └── validate.sh            # Pre-build validation
-├── setup.sh                   # Host bootstrap script
-├── opencode.json             # Plugin configuration
-├── AGENTS.md                 # Agent instructions
-├── .gitignore                # Git exclusions
-└── README.md                 # This file
+├── etc/                        # Configuration files
+│   └── opencode/               # OpenCode system config
+│       └── opencode.jsonc      # Container-specific OpenCode config
+├── scripts/                    # Automation scripts
+│   ├── container-test.sh       # Container verification tests
+│   └── validate.sh             # Pre-build validation
+├── Containerfile               # Image definition
+├── entrypoint.sh               # Container entrypoint
+├── setup.sh                    # Host bootstrap script
+├── opencode.json               # Plugin configuration
+├── AGENTS.md                   # Agent instructions
+├── .gitignore                  # Git exclusions
+└── README.md                   # This file
 ```
 
 ## Installation
@@ -322,6 +323,7 @@ podman build -t opencode-harness:test -f Containerfile .
    podman run -it --rm opencode-harness-test bash -c "
        opencode --version &&
        cat /app/opencode.json &&
+       test -f /etc/opencode/opencode.jsonc &&
        ls -la /vendor/bin &&
        echo 'All checks passed'
    "
@@ -345,7 +347,7 @@ podman build -t opencode-harness:test -f Containerfile .
 
 # Or manually
 jq . opencode.json
-shellcheck setup.sh docker/entrypoint.sh scripts/*.sh
+shellcheck setup.sh entrypoint.sh scripts/*.sh
 ```
 
 ### Git Workflow
@@ -401,10 +403,9 @@ podman run -it --rm ghcr.io/tankdonut/opencode-harness:latest
 
 This project follows [GitHub's AGENTS.md best practices](https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/):
 
-- **AGENTS.md** - Root-level agent instructions for harness engineering
-- **docker/AGENTS.md** - Container-specific agent instructions
+- **AGENTS.md** - Agent instructions for harness and container engineering
 
-These files provide AI agents with:
+This file provides AI agents with:
 - Executable commands with flags
 - Code examples and style guides
 - Clear boundaries (always/ask/never)

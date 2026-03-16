@@ -180,6 +180,13 @@ test_configuration() {
     else
         log_fail "No plugins configured in opencode.json"
     fi
+
+    # Check opencode.jsonc exists at /etc/opencode/
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /etc/opencode/opencode.jsonc; then
+        log_pass "opencode.jsonc exists at /etc/opencode/opencode.jsonc"
+    else
+        log_fail "opencode.jsonc not found at /etc/opencode/opencode.jsonc"
+    fi
 }
 
 # Test: Directory structure

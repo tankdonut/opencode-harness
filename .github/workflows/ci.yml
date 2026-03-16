@@ -51,7 +51,7 @@ jobs:
         run: |
           echo "Running shellcheck on shell scripts..."
           shellcheck setup.sh
-          shellcheck docker/entrypoint.sh
+          shellcheck entrypoint.sh
           echo "✓ All shell scripts pass linting"
 
   # Build and test container
@@ -112,6 +112,9 @@ jobs:
             
             echo 'Testing configuration...'
             cat /app/opencode.json
+            
+            echo 'Testing /etc/opencode/opencode.jsonc...'
+            test -f /etc/opencode/opencode.jsonc && echo '✓ opencode.jsonc found at /etc/opencode/'
             
             echo 'Testing vendor binaries...'
             ls -la /vendor/bin

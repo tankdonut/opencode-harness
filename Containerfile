@@ -12,7 +12,10 @@ RUN apt-get update && apt-get install -y \
     jq \
     nodejs \
     npm \
- && rm -rf /var/lib/apt/lists/*
+    python3 \
+    python3-pip \
+    yq \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -u 1001 -s /bin/bash opencode || useradd -m -s /bin/bash opencode
 
@@ -21,8 +24,9 @@ COPY --from=tools /dist/ /vendor/bin/
 WORKDIR /app
 
 COPY --chown=opencode:opencode opencode.json /app/opencode.json
+COPY --chown=opencode:opencode etc/opencode/opencode.jsonc /etc/opencode/opencode.jsonc
 COPY --chown=opencode:opencode modules/ /app/modules/
-COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/entrypoint
+COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint
 
 ENV PATH="/vendor/bin:${PATH}" \
     OPENCODE_CONFIG="/app/opencode.json" \

@@ -1,0 +1,65 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    // Disable automatic self-updates inside the container
+    "autoupdate": false,
+    // Conversation compaction settings to manage context size
+    "compaction": {
+        // Automatically compact long conversations
+        "auto": true,
+        // Remove low-value messages during compaction
+        "prune": true,
+        // Tokens reserved to avoid exceeding model context limits
+        "reserved": 10000
+    },
+    // Default agent profile to use when none is specified
+    "default_agent": "build",
+    // Additional instruction files loaded into the agent context
+    "instructions": [
+        "AGENTS.md"
+    ],
+    // Default permission policy for tool usage
+    // "ask" prompts before executing the action
+    "permission": {
+        "edit": "ask",
+        "write": "ask",
+        "bash": {
+            "*": "ask",
+            "basename": "allow",
+            "dirname": "allow",
+            "file": "allow",
+            "git branch *": "allow",
+            "git diff *": "allow",
+            "git log *": "allow",
+            "git rev-parse *": "allow",
+            "git show *": "allow",
+            "git status *": "allow",
+            "head *": "allow",
+            "ls *": "allow",
+            "pwd": "allow",
+            "realpath": "allow",
+            "stat": "allow",
+            "tail *": "allow",
+            "wc *": "allow",
+            "which": "allow"
+        }
+    },
+    // OpenCode plugins to load
+    "plugin": [
+        "opencode-beads",
+        "@tarquinen/opencode-dcp@latest"
+    ],
+    // Sharing behavior for sessions (manual = explicit user action required)
+    "share": "manual",
+    // File watcher configuration for workspace awareness
+    "watcher": {
+        "ignore": [
+            // Ignore VCS metadata
+            ".git/**",
+            // Ignore dependency directories
+            "node_modules/**",
+            // Ignore build outputs
+            "dist/**",
+            "build/**"
+        ]
+    }
+}
