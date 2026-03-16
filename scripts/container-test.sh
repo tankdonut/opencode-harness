@@ -158,15 +158,15 @@ test_configuration() {
     log_section "Testing Configuration"
 
     # Check opencode.json exists
-    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /app/opencode.json; then
-        log_pass "opencode.json exists at /app/opencode.json"
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /workspace/opencode.json; then
+        log_pass "opencode.json exists at /workspace/opencode.json"
     else
-        log_fail "opencode.json not found at /app/opencode.json"
+        log_fail "opencode.json not found at /workspace/opencode.json"
         return
     fi
 
     # Validate JSON syntax
-    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq empty /app/opencode.json 2>/dev/null; then
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq empty /workspace/opencode.json 2>/dev/null; then
         log_pass "opencode.json is valid JSON"
     else
         log_fail "opencode.json has invalid JSON syntax"
@@ -174,7 +174,7 @@ test_configuration() {
 
     # Check plugin configuration
     local plugin_count
-    plugin_count=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq '.plugin | length' /app/opencode.json 2>/dev/null || echo "0")
+    plugin_count=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq '.plugin | length' /workspace/opencode.json 2>/dev/null || echo "0")
     if [[ "${plugin_count}" -gt 0 ]]; then
         log_pass "Plugin count: ${plugin_count}"
     else
@@ -193,7 +193,7 @@ test_configuration() {
 test_directory_structure() {
     log_section "Testing Directory Structure"
 
-    local required_dirs=("/app" "/vendor/bin")
+    local required_dirs=("/workspace" "/vendor/bin")
 
     for dir in "${required_dirs[@]}"; do
         if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -d "${dir}"; then
@@ -218,7 +218,7 @@ test_modules() {
     log_section "Testing Modules Directory"
 
     # Check if modules directory exists
-    if ! ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -d /app/modules; then
+    if ! ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -d /workspace/modules; then
         log_skip "Modules directory not found (submodules may not be included)"
         return
     fi
@@ -230,7 +230,7 @@ test_modules() {
     local found_count=0
 
     for module in "${expected_modules[@]}"; do
-        if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -d "/app/modules/${module}"; then
+        if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -d "/workspace/modules/${module}"; then
             log_pass "Module found: ${module}"
             ((found_count++)) || true
         else
@@ -256,11 +256,11 @@ test_user_permissions() {
         log_fail "User 'opencode' not found"
     fi
 
-    # Check /app permissions
-    if ${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" test -r /app/opencode.json; then
-        log_pass "opencode user can read /app/opencode.json"
+    # Check /workspace permissions
+    if ${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" test -r /workspace/opencode.json; then
+        log_pass "opencode user can read /workspace/opencode.json"
     else
-        log_fail "opencode user cannot read /app/opencode.json"
+        log_fail "opencode user cannot read /workspace/opencode.json"
     fi
 }
 
@@ -281,7 +281,7 @@ test_environment() {
     # Check OPENCODE_CONFIG
     local config_value
     config_value=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" bash -c 'echo $OPENCODE_CONFIG')
-    if [[ "${config_value}" == "/app/opencode.json" ]]; then
+    if [[ "${config_value}" == "/workspace/opencode.json" ]]; then
         log_pass "OPENCODE_CONFIG set correctly"
     else
         log_fail "OPENCODE_CONFIG not set correctly (got: ${config_value})"

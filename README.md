@@ -338,7 +338,7 @@ podman build -t opencode-harness:test -f Containerfile .
    ```bash
    podman run -it --rm opencode-harness-test bash -c "
        opencode --version &&
-       cat /app/opencode.json &&
+       cat /workspace/opencode.json &&
        test -f /etc/opencode/opencode.jsonc &&
        ls -la /vendor/bin &&
        echo 'All checks passed'

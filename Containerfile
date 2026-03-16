@@ -74,17 +74,17 @@ RUN set -eux; \
     \
     echo "✓ OpenCode ${OPENCODE_VERSION} installed successfully";
 
-WORKDIR /app
+WORKDIR /workspace
 
 # Copy configuration files
-COPY --chown=opencode:opencode opencode.json /app/opencode.json
+COPY --chown=opencode:opencode opencode.json /workspace/opencode.json
 COPY --chown=opencode:opencode etc/opencode/opencode.jsonc /etc/opencode/opencode.jsonc
-COPY --chown=opencode:opencode modules/ /app/modules/
+COPY --chown=opencode:opencode modules/ /workspace/modules/
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Environment configuration
 ENV PATH="/vendor/bin:${PATH}" \
-    OPENCODE_CONFIG="/app/opencode.json" \
+    OPENCODE_CONFIG="/workspace/opencode.json" \
     OPENCODE_VERSION="${OPENCODE_VERSION}"
 
 # Add labels for image metadata

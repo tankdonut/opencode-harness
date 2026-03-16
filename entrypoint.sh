@@ -9,8 +9,8 @@ set -euo pipefail
 
 # Configuration
 readonly OPENCODE_VERSION="${OPENCODE_VERSION:-1.2.27}"
-readonly CONFIG_PATH="${OPENCODE_CONFIG:-/app/opencode.json}"
-readonly MODULES_PATH="/app/modules"
+readonly CONFIG_PATH="${OPENCODE_CONFIG:-/workspace/opencode.json}"
+readonly MODULES_PATH="/workspace/modules"
 readonly VENDOR_BIN="/vendor/bin"
 
 # Colors for output
