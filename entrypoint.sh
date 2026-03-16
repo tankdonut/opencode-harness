@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # Configuration
-readonly OPENCODE_VERSION="${OPENCODE_VERSION:-1.0.0}"
+readonly OPENCODE_VERSION="${OPENCODE_VERSION:-1.2.27}"
 readonly CONFIG_PATH="${OPENCODE_CONFIG:-/app/opencode.json}"
 readonly MODULES_PATH="/app/modules"
 readonly VENDOR_BIN="/vendor/bin"
@@ -63,25 +63,26 @@ validate_environment() {
     log_success "Environment validation passed"
 }
 
-# Install OpenCode
-install_opencode() {
-    log "Installing OpenCode ${OPENCODE_VERSION}..."
-    
-    if command_exists opencode; then
-        local installed_version
-        installed_version=$(opencode --version 2>/dev/null | head -n1 || echo "unknown")
-        log_warn "OpenCode already installed (${installed_version}), skipping"
-        return 0
-    fi
-    
-    npm install -g "opencode@${OPENCODE_VERSION}"
+# Verify OpenCode installation (pre-installed in container image)
+verify_opencode() {
+    log "Verifying OpenCode installation..."
     
     if ! command_exists opencode; then
-        log_error "OpenCode installation failed"
+        log_error "OpenCode not found - this should be pre-installed in the container image"
         return 1
     fi
     
-    log_success "OpenCode ${OPENCODE_VERSION} installed successfully"
+    local installed_version
+    installed_version=$(opencode --version 2>/dev/null | head -n1 || echo "unknown")
+    
+    log_success "OpenCode ${installed_version} found"
+    
+    # Verify version matches expected (if OPENCODE_VERSION is set)
+    if [[ -n "${OPENCODE_VERSION:-}" ]]; then
+        if [[ "$installed_version" != *"${OPENCODE_VERSION}"* ]]; then
+            log_warn "Installed version (${installed_version}) differs from expected (${OPENCODE_VERSION})"
+        fi
+    fi
 }
 
 # Validate OpenCode configuration
@@ -185,7 +186,7 @@ main() {
     log ""
     
     validate_environment || exit 1
-    install_opencode || exit 1
+    verify_opencode || exit 1
     validate_config || exit 1
     init_submodules || true  # Don't fail if submodules aren't available
     verify_installation || exit 1

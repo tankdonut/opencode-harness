@@ -19,6 +19,8 @@ on:
 env:
   IMAGE_NAME: opencode-harness
   IMAGE_TAG: ${{ github.sha }}
+  # Default OpenCode version - update this when bumping the default version
+  OPENCODE_VERSION: "1.2.27"
 
 jobs:
   # Lint and validate before building
@@ -88,9 +90,11 @@ jobs:
 
       - name: Build container image
         run: |
-          echo "Building container image..."
+          echo "Building container image with OpenCode ${OPENCODE_VERSION}..."
           ${{ env.CONTAINER_BUILD_CMD }} build \
+            --build-arg OPENCODE_VERSION=${{ env.OPENCODE_VERSION }} \
             -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+            -t ${{ env.IMAGE_NAME }}:${{ env.OPENCODE_VERSION }} \
             -t ${{ env.IMAGE_NAME }}:latest \
             -f Containerfile \
             --no-cache \
@@ -137,10 +141,12 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | ${{ env.CONTAINER_CMD }} login ghcr.io -u ${{ github.actor }} --password-stdin
           ${{ env.CONTAINER_CMD }} tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ghcr.io/${{ github.repository_owner }}/opencode-harness:${{ env.IMAGE_TAG }}
+          ${{ env.CONTAINER_CMD }} tag ${{ env.IMAGE_NAME }}:${{ env.OPENCODE_VERSION }} ghcr.io/${{ github.repository_owner }}/opencode-harness:${{ env.OPENCODE_VERSION }}
           ${{ env.CONTAINER_CMD }} tag ${{ env.IMAGE_NAME }}:latest ghcr.io/${{ github.repository_owner }}/opencode-harness:latest
           ${{ env.CONTAINER_CMD }} push ghcr.io/${{ github.repository_owner }}/opencode-harness:${{ env.IMAGE_TAG }}
+          ${{ env.CONTAINER_CMD }} push ghcr.io/${{ github.repository_owner }}/opencode-harness:${{ env.OPENCODE_VERSION }}
           ${{ env.CONTAINER_CMD }} push ghcr.io/${{ github.repository_owner }}/opencode-harness:latest
-          echo "✓ Image pushed to GitHub Container Registry"
+          echo "✓ Image pushed to GitHub Container Registry with tags: ${{ env.IMAGE_TAG }}, ${{ env.OPENCODE_VERSION }}, latest"
 
   # Summary job
   ci-status:

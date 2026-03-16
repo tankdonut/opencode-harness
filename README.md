@@ -130,6 +130,22 @@ Or with Docker:
 docker build -t opencode-harness -f Containerfile .
 ```
 
+#### Build with Specific OpenCode Version
+
+The container image is tagged with the OpenCode version for traceability. Build with a specific version:
+
+```bash
+# Build with specific OpenCode version
+podman build --build-arg OPENCODE_VERSION=1.2.27 -t opencode-harness:1.2.27 -f Containerfile .
+
+# Or with Docker
+docker build --build-arg OPENCODE_VERSION=1.2.27 -t opencode-harness:1.2.27 -f Containerfile .
+```
+
+**Available tags after build:**
+- `opencode-harness:1.2.27` - version-specific tag
+- `opencode-harness:latest` - default tag
+
 Run interactively:
 
 ```bash

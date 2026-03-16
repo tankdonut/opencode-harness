@@ -4,7 +4,7 @@ set -euo pipefail
 
 # shellcheck disable=SC2155
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly OPENCODE_VERSION="${OPENCODE_VERSION:-1.0.0}"
+readonly OPENCODE_VERSION="${OPENCODE_VERSION:-1.2.27}"
 readonly CONFIG_PATH="${SCRIPT_DIR}/opencode.json"
 
 readonly RED='\033[0;31m'
