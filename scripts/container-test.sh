@@ -158,15 +158,15 @@ test_configuration() {
     log_section "Testing Configuration"
 
     # Check opencode.json exists
-    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /workspace/opencode.json; then
-        log_pass "opencode.json exists at /workspace/opencode.json"
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /workspace/.config/opencode/opencode.json; then
+        log_pass "opencode.json exists at /workspace/.config/opencode/opencode.json"
     else
-        log_fail "opencode.json not found at /workspace/opencode.json"
+        log_fail "opencode.json not found at /workspace/.config/opencode/opencode.json"
         return
     fi
 
     # Validate JSON syntax
-    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq empty /workspace/opencode.json 2>/dev/null; then
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq empty /workspace/.config/opencode/opencode.json 2>/dev/null; then
         log_pass "opencode.json is valid JSON"
     else
         log_fail "opencode.json has invalid JSON syntax"
@@ -174,7 +174,7 @@ test_configuration() {
 
     # Check plugin configuration
     local plugin_count
-    plugin_count=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq '.plugin | length' /workspace/opencode.json 2>/dev/null || echo "0")
+    plugin_count=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq '.plugin | length' /workspace/.config/opencode/opencode.json 2>/dev/null || echo "0")
     if [[ "${plugin_count}" -gt 0 ]]; then
         log_pass "Plugin count: ${plugin_count}"
     else
@@ -275,10 +275,10 @@ test_user_permissions() {
     fi
 
     # Check /workspace permissions
-    if ${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" test -r /workspace/opencode.json; then
-        log_pass "opencode user can read /workspace/opencode.json"
+    if ${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" test -r /workspace/.config/opencode/opencode.json; then
+        log_pass "opencode user can read /workspace/.config/opencode/opencode.json"
     else
-        log_fail "opencode user cannot read /workspace/opencode.json"
+        log_fail "opencode user cannot read /workspace/.config/opencode/opencode.json"
     fi
 }
 
@@ -299,7 +299,7 @@ test_environment() {
     # Check OPENCODE_CONFIG
     local config_value
     config_value=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" bash -c 'echo $OPENCODE_CONFIG')
-    if [[ "${config_value}" == "/workspace/opencode.json" ]]; then
+    if [[ "${config_value}" == "/workspace/.config/opencode/opencode.json" ]]; then
         log_pass "OPENCODE_CONFIG set correctly"
     else
         log_fail "OPENCODE_CONFIG not set correctly (got: ${config_value})"
@@ -311,7 +311,7 @@ test_entrypoint() {
     log_section "Testing Entrypoint"
 
     # Check entrypoint script exists
-    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -x /usr/local/bin/entrypoint; then
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -x /usr/local/bin/entrypoint.sh; then
         log_pass "Entrypoint script is executable"
     else
         log_fail "Entrypoint script not executable or missing"

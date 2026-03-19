@@ -89,17 +89,20 @@ opencode-harness/
 ### Host Setup
 
 1. **Clone repository with submodules**:
+
    ```bash
    git clone --recurse-submodules https://github.com/tankdonut/opencode-harness.git
    cd opencode-harness
    ```
 
    Or if already cloned:
+
    ```bash
    git submodule update --init --recursive
    ```
 
 2. **Run setup script**:
+
    ```bash
    ./setup.sh
    ```
@@ -112,6 +115,7 @@ opencode-harness/
    - Set up configuration
 
 3. **Verify installation**:
+
    ```bash
    opencode --version
    ```
@@ -143,6 +147,7 @@ docker build --build-arg OPENCODE_VERSION=1.2.27 -t opencode-harness:1.2.27 -f C
 ```
 
 **Available tags after build:**
+
 - `opencode-harness:1.2.27` - version-specific tag
 - `opencode-harness:latest` - default tag
 
@@ -206,11 +211,13 @@ The main configuration file defines which plugins to load:
 ### Adding Plugins
 
 1. Add plugin as git submodule:
+
    ```bash
    git submodule add <plugin-url> modules/<plugin-name>
    ```
 
 2. Update `opencode.json`:
+
    ```json
    {
        "plugin": [
@@ -221,6 +228,7 @@ The main configuration file defines which plugins to load:
    ```
 
 3. Test in container:
+
    ```bash
    podman build --no-cache -t opencode-harness -f Containerfile .
    ```
@@ -270,6 +278,7 @@ EXAMPLES:
 **Symptom**: `modules/` directories are empty
 
 **Solution**:
+
 ```bash
 git submodule update --init --recursive
 ```
@@ -279,6 +288,7 @@ git submodule update --init --recursive
 **Symptom**: `COPY --from=tools` fails
 
 **Solution**: Verify base image is accessible:
+
 ```bash
 podman pull ghcr.io/tankdonut/tools:latest
 ```
@@ -288,6 +298,7 @@ podman pull ghcr.io/tankdonut/tools:latest
 **Symptom**: Container can't find `opencode.json`
 
 **Solution**: Ensure file exists in repository root:
+
 ```bash
 ls -la opencode.json
 ```
@@ -297,6 +308,7 @@ ls -la opencode.json
 **Symptom**: Can't write to `/app` or `/workspace`
 
 **Solution**: Container runs as non-root user `opencode` (UID 1000). Match host permissions:
+
 ```bash
 chown -R 1000:1000 /path/to/workspace
 ```
@@ -306,6 +318,7 @@ chown -R 1000:1000 /path/to/workspace
 **Symptom**: `Invalid JSON syntax` error
 
 **Solution**: Validate with jq:
+
 ```bash
 jq . opencode.json
 ```
@@ -330,15 +343,17 @@ podman build -t opencode-harness:test -f Containerfile .
 ### Testing Container Changes
 
 1. **Build without cache**:
+
    ```bash
    podman build --no-cache -t opencode-harness-test -f Containerfile .
    ```
 
 2. **Run validation tests**:
+
    ```bash
    podman run -it --rm opencode-harness-test bash -c "
        opencode --version &&
-       cat /workspace/opencode.json &&
+       cat /workspace/.config/opencode/opencode.json &&
        test -f /etc/opencode/opencode.jsonc &&
        ls -la /vendor/bin &&
        echo 'All checks passed'
@@ -346,11 +361,13 @@ podman build -t opencode-harness:test -f Containerfile .
    ```
 
 3. **Run comprehensive test suite**:
+
    ```bash
    ./scripts/container-test.sh opencode-harness-test
    ```
 
 4. **Scan for vulnerabilities**:
+
    ```bash
    podman image scan opencode-harness-test
    ```
@@ -372,6 +389,7 @@ shellcheck setup.sh entrypoint.sh scripts/*.sh
 2. Run validation: `./scripts/validate.sh`
 3. Build and test: `podman build -t test -f Containerfile . && ./scripts/container-test.sh test`
 4. Commit with conventional commits:
+
    ```bash
    git commit -m "feat: add new plugin"
    git commit -m "fix: resolve submodule issue"
@@ -422,6 +440,7 @@ This project follows [GitHub's AGENTS.md best practices](https://github.blog/ai-
 - **AGENTS.md** - Agent instructions for harness and container engineering
 
 This file provides AI agents with:
+
 - Executable commands with flags
 - Code examples and style guides
 - Clear boundaries (always/ask/never)

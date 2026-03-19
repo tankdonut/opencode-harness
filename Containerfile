@@ -84,7 +84,7 @@ COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Environment configuration
 ENV PATH="/vendor/bin:${PATH}" \
-    OPENCODE_CONFIG="/workspace/opencode.json" \
+    OPENCODE_CONFIG="/workspace/.config/opencode/opencode.json" \
     OPENCODE_VERSION="${OPENCODE_VERSION}"
 
 # Add labels for image metadata
