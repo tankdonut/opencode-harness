@@ -256,6 +256,24 @@ test_user_permissions() {
         log_fail "User 'opencode' not found"
     fi
 
+    # Check HOME directory is set to /workspace
+    local home_dir
+    home_dir=$(${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" bash -c "echo \$HOME" 2>/dev/null || echo "")
+    if [[ "${home_dir}" == "/workspace" ]]; then
+        log_pass "HOME directory is /workspace"
+    else
+        log_fail "HOME directory is not /workspace (got: ${home_dir})"
+    fi
+
+    # Verify user's home directory in passwd
+    local passwd_home
+    passwd_home=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" getent passwd opencode | cut -d: -f6 2>/dev/null || echo "")
+    if [[ "${passwd_home}" == "/workspace" ]]; then
+        log_pass "User home in /etc/passwd is /workspace"
+    else
+        log_fail "User home in /etc/passwd is not /workspace (got: ${passwd_home})"
+    fi
+
     # Check /workspace permissions
     if ${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" test -r /workspace/opencode.json; then
         log_pass "opencode user can read /workspace/opencode.json"
