@@ -54,6 +54,7 @@ git submodule update --init --recursive
 ```
 
 The setup script will:
+
 - Check all prerequisites and report any missing dependencies
 - Initialize git submodules (everything-claude-code, oh-my-openagent, superpowers)
 - Validate `opencode.json` syntax and plugin references
@@ -77,6 +78,7 @@ opencode --help
 #### Troubleshooting Host Installation
 
 **Submodule initialization fails:**
+
 ```bash
 # Manually sync and update submodules
 git submodule sync
@@ -84,6 +86,7 @@ git submodule update --init --recursive --force
 ```
 
 **OpenCode installation fails:**
+
 ```bash
 # Check Node.js and npm versions
 node --version && npm --version
@@ -94,6 +97,7 @@ npm install -g @opencode/cli@latest
 ```
 
 **Permission errors:**
+
 ```bash
 # Fix permissions on setup script
 chmod +x setup.sh
@@ -146,6 +150,7 @@ podman run -it --rm opencode-harness bash -c "opencode --version && echo 'Succes
 #### Container Usage Patterns
 
 **Development workflow:**
+
 ```bash
 # Mount current directory as workspace
 podman run -it --rm \
@@ -161,6 +166,7 @@ podman run --rm \
 ```
 
 **CI/CD integration:**
+
 ```bash
 # In your CI pipeline
 podman run --rm \
@@ -177,6 +183,7 @@ For contributors or advanced users who need to modify the harness itself.
 #### Development Prerequisites
 
 Additional tools needed for development:
+
 - **Make**: Build automation
 - **ShellCheck**: Shell script linting
 - **hadolint**: Dockerfile linting
@@ -313,6 +320,7 @@ opencode list-plugins  # If supported by your OpenCode version
 ### Troubleshooting Common Issues
 
 **Git submodule authentication:**
+
 ```bash
 # If submodules fail to clone due to authentication
 git config --global url."https://github.com/".insteadOf git@github.com:
@@ -321,6 +329,7 @@ git submodule update --init --recursive
 ```
 
 **Container build failures:**
+
 ```bash
 # Check available disk space
 df -h
@@ -333,6 +342,7 @@ podman build --no-cache -t opencode-harness -f Containerfile .
 ```
 
 **OpenCode version conflicts:**
+
 ```bash
 # Check for multiple OpenCode installations
 which opencode

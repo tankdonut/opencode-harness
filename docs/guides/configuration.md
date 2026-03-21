@@ -40,7 +40,7 @@ Container-specific configuration with extended features:
     "$schema": "https://opencode.ai/config.json",
     // Inherit from main configuration
     "extends": "/app/opencode.json",
-    
+
     // Container-specific overrides
     "plugin": [
         "@tarquinen/opencode-dcp@latest",
@@ -48,7 +48,7 @@ Container-specific configuration with extended features:
         "ecc-universal",
         "oh-my-opencode"
     ],
-    
+
     // Container optimizations
     "settings": {
         "containerMode": true,
@@ -57,7 +57,7 @@ Container-specific configuration with extended features:
         "logLevel": "info", // debug, info, warn, error
         "maxConcurrentTasks": 4,
     },
-    
+
     // Plugin-specific configurations
     "pluginConfig": {
         "oh-my-opencode": {
@@ -68,7 +68,7 @@ Container-specific configuration with extended features:
                     "maxTokens": 8192
                 },
                 "hephaestus": {
-                    "model": "gpt-4-turbo", 
+                    "model": "gpt-4-turbo",
                     "temperature": 0.1,
                     "maxTokens": 4096
                 }
@@ -92,7 +92,7 @@ Container-specific configuration with extended features:
         "autoSave": true,
         "backupInterval": 300 // seconds
     },
-    
+
     // User-specific plugin configurations
     "pluginConfig": {
         "oh-my-opencode": {
@@ -103,7 +103,7 @@ Container-specific configuration with extended features:
             }
         }
     },
-    
+
     // API keys and credentials (use environment variables instead)
     // DO NOT store secrets here - use environment variables
     "apiKeys": {
@@ -128,7 +128,7 @@ Container-specific configuration with extended features:
         "oh-my-opencode",
         "project-specific-plugin" // Local plugin
     ],
-    
+
     // Project settings
     "settings": {
         "projectName": "MyProject",
@@ -136,7 +136,7 @@ Container-specific configuration with extended features:
         "targetFramework": "react-typescript",
         "codeStyle": "prettier-eslint"
     },
-    
+
     // Project-specific agent configurations
     "pluginConfig": {
         "oh-my-opencode": {
@@ -203,7 +203,7 @@ Container-specific configuration with extended features:
                 },
                 "hephaestus": {
                     "model": "gpt-4-turbo",
-                    "temperature": 0.1, 
+                    "temperature": 0.1,
                     "maxTokens": 4096,
                     "specialization": "backend-development"
                 },
@@ -213,14 +213,14 @@ Container-specific configuration with extended features:
                     "planningDepth": "detailed"
                 }
             },
-            
+
             // Background task limits
             "backgroundTasks": {
                 "maxConcurrent": 5,
                 "timeoutMs": 300000, // 5 minutes
                 "retryAttempts": 3
             },
-            
+
             // Skill-embedded MCPs
             "skillMCPs": {
                 "autoCleanup": true,
@@ -299,7 +299,7 @@ Container-specific configuration with extended features:
         "sourceMap": true,
         "debugMode": true
     },
-    
+
     "pluginConfig": {
         "oh-my-opencode": {
             "development": {
@@ -322,7 +322,7 @@ Container-specific configuration with extended features:
         "optimized": true,
         "telemetry": true
     },
-    
+
     "pluginConfig": {
         "oh-my-opencode": {
             "production": {
@@ -419,7 +419,7 @@ jq . ~/.config/opencode/opencode.json > /dev/null && echo "✓ user config valid
                 "planning": "gpt-4-turbo",        // Strategic planning
                 "documentation": "claude-3-haiku" // Fast documentation
             },
-            
+
             "fallback": {
                 "primary": "claude-3-opus",
                 "secondary": "gpt-4-turbo",
@@ -481,7 +481,7 @@ jq . ~/.config/opencode/opencode.json > /dev/null && echo "✓ user config valid
                 "memoryLimit": "1GB"
             }
         },
-        
+
         "secrets": {
             "storageMethod": "environment", // never "file"
             "encryption": "AES-256",
@@ -496,6 +496,7 @@ jq . ~/.config/opencode/opencode.json > /dev/null && echo "✓ user config valid
 ### Common Issues
 
 **Configuration not found:**
+
 ```bash
 # Check configuration file locations
 ls -la opencode.json
@@ -505,6 +506,7 @@ ls -la etc/opencode/opencode.jsonc
 ```
 
 **Plugin loading failures:**
+
 ```bash
 # Verify plugin paths
 git submodule status
@@ -515,6 +517,7 @@ jq '.plugin[]' opencode.json
 ```
 
 **Permission errors:**
+
 ```bash
 # Fix configuration file permissions
 chmod 644 opencode.json

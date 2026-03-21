@@ -12,7 +12,7 @@ OpenCode Harness is a comprehensive bootstrap environment that bundles three pow
 
 ## Quick Agent Context
 
-```
+```text
 Project: OpenCode Harness
 Purpose: Containerized bootstrap for OpenCode with production-ready plugins
 Tech Stack: Bash, Docker/Podman, Git submodules, OpenCode JSON config
@@ -73,7 +73,7 @@ podman run -it --rm opencode-harness bash -c "opencode --version && echo 'Succes
 
 ## Key Files and Structure
 
-```
+```text
 opencode-harness/
 ├── setup.sh                   # Host installation script
 ├── Containerfile              # Container build definition
@@ -100,7 +100,7 @@ opencode-harness/
     "plugin": [
         "@tarquinen/opencode-dcp@latest",
         "cc-safety-net",
-        "ecc-universal", 
+        "ecc-universal",
         "oh-my-opencode"
     ]
 }
@@ -113,13 +113,15 @@ opencode-harness/
 When working with this project, you should understand:
 
 ### Your Role
+
 - **OpenCode Harness Engineer** specializing in:
   - Configuration management
-  - Container engineering  
+  - Container engineering
   - Git submodule management
   - Bootstrap automation
 
 ### Key Responsibilities
+
 - Setting up reproducible OpenCode environments
 - Managing plugin dependencies as submodules
 - Building and testing containerized deployments
@@ -128,6 +130,7 @@ When working with this project, you should understand:
 ### Code Style & Conventions
 
 **Shell Scripts:**
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail  # Always use strict error handling
@@ -139,6 +142,7 @@ function install_plugin() {
 ```
 
 **Container Builds:**
+
 ```dockerfile
 # Always pin versions, never use 'latest'
 FROM docker.io/library/ubuntu:24.04
@@ -168,22 +172,26 @@ podman build --no-cache -t test -f Containerfile .
 ## Troubleshooting Common Issues
 
 ### Submodules Not Initialized
+
 ```bash
 git submodule update --init --recursive
 ```
 
 ### Container Build Fails
+
 ```bash
 # Check base images are accessible
 podman pull ghcr.io/tankdonut/tools:latest
 ```
 
 ### JSON Validation Errors
+
 ```bash
 jq . opencode.json  # Validate syntax
 ```
 
 ### Permission Errors
+
 ```bash
 # Container runs as UID 1000 (opencode user)
 chown -R 1000:1000 /path/to/workspace
@@ -204,7 +212,7 @@ podman image scan opencode-harness-test
 After installation:
 
 1. **Read AGENTS.md** - Detailed technical instructions
-2. **Review DEVELOPMENT.md** - Development workflows and troubleshooting  
+2. **Review DEVELOPMENT.md** - Development workflows and troubleshooting
 3. **Check CONTRIBUTING.md** - If you plan to contribute
 
 ## Agent-Specific Notes

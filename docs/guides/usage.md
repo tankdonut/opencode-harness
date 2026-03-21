@@ -19,8 +19,9 @@ opencode
 ```
 
 The harness automatically loads plugins from:
+
 - **everything-claude-code**: Production agents, skills, and commands
-- **oh-my-openagent**: Multi-agent orchestration system  
+- **oh-my-openagent**: Multi-agent orchestration system
 - **superpowers**: Advanced workflow skills
 
 ### Container Environment
@@ -94,6 +95,7 @@ opencode list-skills
 ### Development Environment
 
 **Interactive development:**
+
 ```bash
 # Start development container
 podman run -it --rm \
@@ -108,6 +110,7 @@ ls -la /workspace
 ```
 
 **Persistent containers:**
+
 ```bash
 # Create persistent container for long-running work
 podman run -dit \
@@ -127,6 +130,7 @@ podman rm my-opencode-env
 ### CI/CD Integration
 
 **GitHub Actions example:**
+
 ```yaml
 name: OpenCode Validation
 on: [push, pull_request]
@@ -138,7 +142,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      
+
       - name: Run OpenCode validation
         run: |
           podman pull ghcr.io/tankdonut/opencode-harness:latest
@@ -150,6 +154,7 @@ jobs:
 ```
 
 **GitLab CI example:**
+
 ```yaml
 validate-opencode:
   stage: test
@@ -165,6 +170,7 @@ validate-opencode:
 ### Team Collaboration
 
 **Consistent environments:**
+
 ```bash
 # Team members use same container version
 podman pull ghcr.io/tankdonut/opencode-harness:v1.0.0
@@ -178,6 +184,7 @@ podman run -it --rm \
 ```
 
 **Project-specific configurations:**
+
 ```bash
 # Each project can have its own opencode.json
 # Container automatically picks up project configuration
@@ -211,19 +218,21 @@ podman build -t opencode-harness -f Containerfile .
 ### Plugin Configuration
 
 **Main configuration file:** `opencode.json`
+
 ```json
 {
     "$schema": "https://opencode.ai/config.json",
     "plugin": [
         "@tarquinen/opencode-dcp@latest",
         "cc-safety-net",
-        "ecc-universal", 
+        "ecc-universal",
         "oh-my-opencode"
     ]
 }
 ```
 
 **Container-specific configuration:** `etc/opencode/opencode.jsonc`
+
 - Used for container-specific optimizations
 - Supports comments and trailing commas
 - Inherits from main opencode.json
@@ -268,6 +277,7 @@ EOF
 ### Environment Variables
 
 **Host environment:**
+
 ```bash
 # Set OpenCode environment variables
 export OPENCODE_CONFIG_PATH=/path/to/config
@@ -278,6 +288,7 @@ opencode
 ```
 
 **Container environment:**
+
 ```bash
 # Pass environment variables to container
 podman run -it --rm \
@@ -290,6 +301,7 @@ podman run -it --rm \
 ### Debugging and Logging
 
 **Enable verbose logging:**
+
 ```bash
 # Host
 OPENCODE_LOG_LEVEL=debug opencode
@@ -301,6 +313,7 @@ podman run -it --rm \
 ```
 
 **Access container logs:**
+
 ```bash
 # View container logs
 podman logs my-opencode-container
@@ -314,6 +327,7 @@ podman logs -f my-opencode-container
 ### Container Performance
 
 **Resource limits:**
+
 ```bash
 # Limit container resources
 podman run -it --rm \
@@ -324,6 +338,7 @@ podman run -it --rm \
 ```
 
 **Volume optimization:**
+
 ```bash
 # Use bind mounts for better performance
 podman run -it --rm \
@@ -335,6 +350,7 @@ podman run -it --rm \
 ### Caching Strategies
 
 **Container layer caching:**
+
 ```bash
 # Build with cache optimization
 podman build \
@@ -344,6 +360,7 @@ podman build \
 ```
 
 **Plugin caching:**
+
 ```bash
 # Cache plugin installations
 # Plugins are cached as git submodules
@@ -367,20 +384,22 @@ podman build \
 ### Maintenance
 
 1. **Regular updates:**
+
    ```bash
    # Update harness
    git pull origin main
    git submodule update --remote --recursive
-   
+
    # Rebuild container
    podman build -t opencode-harness -f Containerfile .
    ```
 
 2. **Cleanup:**
+
    ```bash
    # Clean up old containers
    podman system prune -a
-   
+
    # Clean up unused images
    podman image prune -a
    ```
@@ -390,25 +409,28 @@ podman build \
 **Common issues and solutions:**
 
 1. **Plugin loading failures:**
+
    ```bash
    # Verify submodules are initialized
    git submodule status
-   
+
    # Reinitialize if needed
    git submodule update --init --recursive
    ```
 
 2. **Container permission issues:**
+
    ```bash
    # Fix workspace permissions
    chown -R 1000:1000 /path/to/workspace
    ```
 
 3. **Memory/resource issues:**
+
    ```bash
    # Monitor container resource usage
    podman stats my-container
-   
+
    # Increase limits if needed
    podman run --memory=8g --cpus=4 ...
    ```
@@ -416,5 +438,5 @@ podman build \
 ## Getting Help
 
 - **Documentation**: Check [DEVELOPMENT.md](../../DEVELOPMENT.md) for development-specific usage
-- **Issues**: Report problems on [GitHub Issues](https://github.com/tankdonut/opencode-harness/issues)  
+- **Issues**: Report problems on [GitHub Issues](https://github.com/tankdonut/opencode-harness/issues)
 - **Community**: Join discussions for user support and tips
