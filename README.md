@@ -16,12 +16,10 @@ OpenCode Harness bundles three powerful OpenCode plugin ecosystems as git submod
 
 This harness provides:
 
-- ✅ Automated setup scripts for host and container environments
-- ✅ Pre-configured OpenCode plugin wiring
-- ✅ Containerized deployments (Podman/Docker)
-- ✅ Comprehensive agent instructions via AGENTS.md
-- ✅ Git submodule management for easy updates
-- ✅ **CI/CD automation with container build, test, and validation**
+- **Bootstrap automation** - Setup scripts and containerized environments
+- **Plugin ecosystem** - Pre-wired access to 3 major OpenCode plugin collections  
+- **Agent-ready documentation** - Comprehensive guides designed for AI assistants
+- **Git submodule management** - Easy plugin updates and version control
 
 ## Quick Start
 
@@ -35,22 +33,6 @@ https://raw.githubusercontent.com/tankdonut/opencode-harness/main/docs/guides/in
 ```
 
 Or read the [Agent Installation Guide](docs/guides/installation.md) - specifically designed for AI assistants with context, role definitions, and technical instructions.
-
-## Features
-
-- **Reproducible Environments**: Container-based deployments ensure consistent setups across teams
-- **Plugin Management**: Git submodules make updating and versioning plugins straightforward
-- **Production Ready**: Battle-tested agents and skills from established OpenCode ecosystems
-- **Security Focused**: Non-root containers, no secrets in images, minimal attack surface
-- **Well Documented**: Comprehensive AGENTS.md files following GitHub best practices
-
-## Security
-
-- **No secrets in containers**: API keys and credentials never committed or baked into images
-- **Non-root user**: Containers run as `opencode` user (UID 1000)
-- **Pinned versions**: All base images and packages use explicit versions
-- **Minimal images**: Only essential dependencies installed
-- **Vulnerability scanning**: Run `podman image scan` before releases
 
 ## Documentation
 
