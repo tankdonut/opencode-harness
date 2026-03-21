@@ -106,8 +106,6 @@ Or with Docker:
 docker build -t opencode-harness -f Containerfile .
 ```
 
-
-
 Run interactively:
 
 ```bash
@@ -166,20 +164,6 @@ The main configuration file defines which plugins to load:
 ```
 
 For plugin management and advanced configuration, see [DEVELOPMENT.md](DEVELOPMENT.md).
-
-## AGENTS.md Files
-
-This project follows [GitHub's AGENTS.md best practices](https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/):
-
-- **AGENTS.md** - Agent instructions for harness and container engineering
-
-This file provides AI agents with:
-
-- Executable commands with flags
-- Code examples and style guides
-- Clear boundaries (always/ask/never)
-- Project structure and tech stack
-- Troubleshooting guidance
 
 ## Security
 
