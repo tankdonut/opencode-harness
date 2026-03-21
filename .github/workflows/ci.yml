@@ -70,23 +70,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Podman
-        uses: ./.github/actions/setup-podman
-        continue-on-error: true
-        id: podman-setup
-
-      - name: Fallback to Docker
-        if: steps.podman-setup.outcome == 'failure'
+      - name: Set container runtime
         run: |
-          echo "Podman setup failed, using Docker"
+          echo "Using Docker (pre-installed on GitHub runners)"
           echo "CONTAINER_CMD=docker" >> $GITHUB_ENV
           echo "CONTAINER_BUILD_CMD=docker" >> $GITHUB_ENV
-
-      - name: Set container runtime
-        if: steps.podman-setup.outcome == 'success'
-        run: |
-          echo "CONTAINER_CMD=podman" >> $GITHUB_ENV
-          echo "CONTAINER_BUILD_CMD=podman" >> $GITHUB_ENV
 
       - name: Build container image
         run: |

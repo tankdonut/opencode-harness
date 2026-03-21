@@ -15,10 +15,8 @@ The harness automates configuration, provides containerized environments, and st
 ```text
 opencode-harness/
 ├── .github/                    # GitHub configuration
-│   ├── workflows/              # CI/CD workflows
-│   │   └── ci.yml              # Main CI pipeline
-│   └── actions/                # Composite actions
-│       └── setup-podman/       # Podman installation action
+│   └── workflows/              # CI/CD workflows
+│       └── ci.yml              # Main CI pipeline
 ├── modules/                    # Git submodules (OpenCode plugins)
 │   ├── everything-claude-code/ # 16 agents, 65 skills, 40 commands
 │   ├── oh-my-openagent/       # Multi-agent system with Sisyphus orchestrator
