@@ -41,6 +41,17 @@ podman build -t opencode-harness -f Containerfile .
 podman run -it --rm opencode-harness
 ```
 
+### For AI Assistants / Agents
+
+Copy and paste this prompt to your LLM agent (Claude Code, Cursor, etc.):
+
+```
+Install and configure OpenCode Harness by following the instructions here:
+https://raw.githubusercontent.com/tankdonut/opencode-harness/main/docs/guide/installation.md
+```
+
+Or read the [Agent Installation Guide](docs/guide/installation.md) - specifically designed for AI assistants with context, role definitions, and technical instructions.
+
 ## Features
 
 - **Reproducible Environments**: Container-based deployments ensure consistent setups across teams
