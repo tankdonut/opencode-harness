@@ -25,32 +25,16 @@ This harness provides:
 
 ## Quick Start
 
-### Host Installation
-
-```bash
-git clone https://github.com/tankdonut/opencode-harness.git
-cd opencode-harness
-git submodule update --init --recursive
-./setup.sh
-```
-
-### Container Usage
-
-```bash
-podman build -t opencode-harness -f Containerfile .
-podman run -it --rm opencode-harness
-```
-
 ### For AI Assistants / Agents
 
 Copy and paste this prompt to your LLM agent (Claude Code, Cursor, etc.):
 
-```
+```text
 Install and configure OpenCode Harness by following the instructions here:
-https://raw.githubusercontent.com/tankdonut/opencode-harness/main/docs/guide/installation.md
+https://raw.githubusercontent.com/tankdonut/opencode-harness/main/docs/guides/installation.md
 ```
 
-Or read the [Agent Installation Guide](docs/guide/installation.md) - specifically designed for AI assistants with context, role definitions, and technical instructions.
+Or read the [Agent Installation Guide](docs/guides/installation.md) - specifically designed for AI assistants with context, role definitions, and technical instructions.
 
 ## Features
 
@@ -59,122 +43,6 @@ Or read the [Agent Installation Guide](docs/guide/installation.md) - specificall
 - **Production Ready**: Battle-tested agents and skills from established OpenCode ecosystems
 - **Security Focused**: Non-root containers, no secrets in images, minimal attack surface
 - **Well Documented**: Comprehensive AGENTS.md files following GitHub best practices
-
-## Installation
-
-### Prerequisites
-
-- **Git**: 2.34+
-- **Node.js**: 12.22+ (includes npm)
-- **Podman** or **Docker**: For container deployments (optional)
-- **jq**: For JSON validation (optional but recommended)
-
-### Host Setup
-
-1. **Clone repository with submodules**:
-
-   ```bash
-   git clone --recurse-submodules https://github.com/tankdonut/opencode-harness.git
-   cd opencode-harness
-   ```
-
-   Or if already cloned:
-
-   ```bash
-   git submodule update --init --recursive
-   ```
-
-2. **Run setup script**:
-
-   ```bash
-   ./setup.sh
-   ```
-
-   The script will:
-   - Check prerequisites
-   - Initialize git submodules
-   - Validate `opencode.json`
-   - Install OpenCode
-   - Set up configuration
-
-3. **Verify installation**:
-
-   ```bash
-   opencode --version
-   ```
-
-### Container Setup
-
-Build the container image:
-
-```bash
-podman build -t opencode-harness -f Containerfile .
-```
-
-Or with Docker:
-
-```bash
-docker build -t opencode-harness -f Containerfile .
-```
-
-Run interactively:
-
-```bash
-podman run -it --rm opencode-harness
-```
-
-Mount a workspace:
-
-```bash
-podman run -it --rm -v $(pwd):/workspace opencode-harness
-```
-
-## Usage
-
-### Host Environment
-
-After running `setup.sh`, OpenCode is available globally:
-
-```bash
-opencode
-```
-
-### Container Environment
-
-The container comes with OpenCode pre-configured:
-
-```bash
-podman run -it --rm opencode-harness opencode --version
-```
-
-For development work, mount your project directory:
-
-```bash
-podman run -it --rm \
-  -v $(pwd):/workspace \
-  -w /workspace \
-  opencode-harness bash
-```
-
-## Configuration
-
-### opencode.json
-
-The main configuration file defines which plugins to load:
-
-```json
-{
-    "$schema": "https://opencode.ai/config.json",
-    "plugin": [
-        "@tarquinen/opencode-dcp@latest",
-        "cc-safety-net",
-        "ecc-universal",
-        "oh-my-opencode"
-    ]
-}
-```
-
-For plugin management and advanced configuration, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Security
 
@@ -185,6 +53,15 @@ For plugin management and advanced configuration, see [DEVELOPMENT.md](DEVELOPME
 - **Vulnerability scanning**: Run `podman image scan` before releases
 
 ## Documentation
+
+### Getting Started
+
+- **[Agent Installation Guide](docs/guides/installation.md)** - For AI assistants/agents (includes role definitions and context)
+- **[Detailed Installation Guide](docs/guides/installation-detailed.md)** - Comprehensive installation for all platforms and use cases
+- **[Usage Guide](docs/guides/usage.md)** - How to use OpenCode Harness in different environments
+- **[Configuration Guide](docs/guides/configuration.md)** - Complete configuration reference
+
+### Development & Contributing
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to this project
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development workflows, testing, and troubleshooting
