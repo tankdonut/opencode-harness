@@ -12,12 +12,13 @@ readonly OPENCODE_VERSION="${OPENCODE_VERSION:-1.2.27}"
 readonly CONFIG_PATH="${OPENCODE_CONFIG:-/workspace/.config/opencode/opencode.json}"
 readonly MODULES_PATH="/workspace/modules"
 readonly VENDOR_BIN="/vendor/bin"
+readonly DEFAULT_CONFIG_SOURCE="${DEFAULT_CONFIG_SOURCE:-/app/opencode.json}"
 
 # Colors for output
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly NC='\033[0m' # No Color
+if [[ -z "${RED:-}" ]]; then readonly RED='\033[0;31m'; fi
+if [[ -z "${GREEN:-}" ]]; then readonly GREEN='\033[0;32m'; fi
+if [[ -z "${YELLOW:-}" ]]; then readonly YELLOW='\033[1;33m'; fi
+if [[ -z "${NC:-}" ]]; then readonly NC='\033[0m'; fi
 
 # Logging functions
 log() {
@@ -39,6 +40,137 @@ log_warn() {
 # Check if command exists
 command_exists() {
     command -v "$1" &>/dev/null
+}
+
+# =============================================================================
+# Bootstrap Helper Functions
+# =============================================================================
+
+# Derive config directory from OPENCODE_CONFIG path
+# Given "/workspace/.config/opencode/opencode.json", returns "/workspace/.config/opencode"
+derive_config_dir() {
+    local config_path="${1:-$CONFIG_PATH}"
+    
+    if [[ -z "$config_path" ]]; then
+        log_error "derive_config_dir: config_path is required"
+        return 1
+    fi
+    
+    dirname "$config_path"
+}
+
+# Create config directory if missing
+create_config_dir() {
+    local config_dir="${1:-}"
+    
+    if [[ -z "$config_dir" ]]; then
+        log_error "create_config_dir: config_dir is required"
+        return 1
+    fi
+    
+    if [[ -d "$config_dir" ]]; then
+        return 0
+    fi
+    
+    mkdir -p "$config_dir"
+}
+
+# Copy config file from source to target
+# Uses cp -n (no overwrite) unless OPENCODE_BOOTSTRAP_FORCE=1
+copy_config() {
+    local source="${1:-}"
+    local target="${2:-}"
+    local force="${OPENCODE_BOOTSTRAP_FORCE:-0}"
+    
+    if [[ -z "$source" ]] || [[ -z "$target" ]]; then
+        log_error "copy_config: source and target are required"
+        return 1
+    fi
+    
+    if [[ ! -f "$source" ]]; then
+        log_error "copy_config: source file not found: $source"
+        return 1
+    fi
+    
+    # Ensure target directory exists
+    local target_dir
+    target_dir=$(dirname "$target")
+    if [[ ! -d "$target_dir" ]]; then
+        mkdir -p "$target_dir"
+    fi
+    
+    if [[ "$force" == "1" ]]; then
+        cp "$source" "$target"
+    elif [[ -f "$target" ]]; then
+        # Target exists, skip without force
+        log_warn "Config exists at $target, skipping (set OPENCODE_BOOTSTRAP_FORCE=1 to overwrite)"
+    else
+        # Target missing, use cp -n (no overwrite)
+        cp -n "$source" "$target"
+    fi
+}
+
+# Copy assets from module directory to config directory
+# Copies skills/, agents/, commands/ directories if they exist
+copy_assets() {
+    local module_path="${1:-}"
+    local config_dir="${2:-}"
+    local force="${OPENCODE_BOOTSTRAP_FORCE:-0}"
+    
+    if [[ -z "$module_path" ]] || [[ -z "$config_dir" ]]; then
+        log_error "copy_assets: module_path and config_dir are required"
+        return 1
+    fi
+    
+    # Asset directories to copy
+    local asset_dirs=("skills" "agents" "commands")
+    
+    for asset_dir in "${asset_dirs[@]}"; do
+        local source_dir="${module_path}/${asset_dir}"
+        
+        # Skip if source doesn't exist
+        if [[ ! -d "$source_dir" ]]; then
+            continue
+        fi
+        
+        local dest_dir="${config_dir}/${asset_dir}"
+        
+        # Create destination directory if needed
+        if [[ ! -d "$dest_dir" ]]; then
+            mkdir -p "$dest_dir"
+        fi
+        
+        # Copy files
+        if [[ "$force" == "1" ]]; then
+            cp -r "${source_dir}/." "${dest_dir}/"
+        else
+            cp -rn "${source_dir}/." "${dest_dir}/"
+        fi
+    done
+}
+
+# Main bootstrap orchestration - calls all helpers
+bootstrap_config() {
+    log "Bootstrapping OpenCode configuration..."
+    
+    local config_dir
+    config_dir=$(derive_config_dir "$CONFIG_PATH")
+    
+    create_config_dir "$config_dir"
+    
+    copy_config "$DEFAULT_CONFIG_SOURCE" "$CONFIG_PATH"
+    
+    # Copy assets from all modules
+    if [[ -d "$MODULES_PATH" ]]; then
+        local module
+        for module in "$MODULES_PATH"/*; do
+            if [[ -d "$module" ]]; then
+                copy_assets "$module" "$config_dir"
+            fi
+        done
+    fi
+    
+    log_success "Configuration bootstrap complete"
 }
 
 # Validate environment
@@ -202,5 +334,7 @@ main() {
     fi
 }
 
-# Run main function
-main "$@"
+# Run main function (only if executed directly, not sourced)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
