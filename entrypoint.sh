@@ -319,6 +319,7 @@ main() {
 
     validate_environment || exit 1
     verify_opencode || exit 1
+    bootstrap_config || exit 1
     validate_config || exit 1
     init_submodules || true  # Don't fail if submodules aren't available
     verify_installation || exit 1
