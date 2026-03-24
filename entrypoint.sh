@@ -50,28 +50,28 @@ command_exists() {
 # Given "/workspace/.config/opencode/opencode.json", returns "/workspace/.config/opencode"
 derive_config_dir() {
     local config_path="${1:-$CONFIG_PATH}"
-    
+
     if [[ -z "$config_path" ]]; then
         log_error "derive_config_dir: config_path is required"
         return 1
     fi
-    
+
     dirname "$config_path"
 }
 
 # Create config directory if missing
 create_config_dir() {
     local config_dir="${1:-}"
-    
+
     if [[ -z "$config_dir" ]]; then
         log_error "create_config_dir: config_dir is required"
         return 1
     fi
-    
+
     if [[ -d "$config_dir" ]]; then
         return 0
     fi
-    
+
     mkdir -p "$config_dir"
 }
 
@@ -81,24 +81,24 @@ copy_config() {
     local source="${1:-}"
     local target="${2:-}"
     local force="${OPENCODE_BOOTSTRAP_FORCE:-0}"
-    
+
     if [[ -z "$source" ]] || [[ -z "$target" ]]; then
         log_error "copy_config: source and target are required"
         return 1
     fi
-    
+
     if [[ ! -f "$source" ]]; then
         log_error "copy_config: source file not found: $source"
         return 1
     fi
-    
+
     # Ensure target directory exists
     local target_dir
     target_dir=$(dirname "$target")
     if [[ ! -d "$target_dir" ]]; then
         mkdir -p "$target_dir"
     fi
-    
+
     if [[ "$force" == "1" ]]; then
         cp "$source" "$target"
     elif [[ -f "$target" ]]; then
@@ -116,30 +116,30 @@ copy_assets() {
     local module_path="${1:-}"
     local config_dir="${2:-}"
     local force="${OPENCODE_BOOTSTRAP_FORCE:-0}"
-    
+
     if [[ -z "$module_path" ]] || [[ -z "$config_dir" ]]; then
         log_error "copy_assets: module_path and config_dir are required"
         return 1
     fi
-    
+
     # Asset directories to copy
-    local asset_dirs=("skills" "agents" "commands")
-    
+    local asset_dirs=("skills")
+
     for asset_dir in "${asset_dirs[@]}"; do
         local source_dir="${module_path}/${asset_dir}"
-        
+
         # Skip if source doesn't exist
         if [[ ! -d "$source_dir" ]]; then
             continue
         fi
-        
+
         local dest_dir="${config_dir}/${asset_dir}"
-        
+
         # Create destination directory if needed
         if [[ ! -d "$dest_dir" ]]; then
             mkdir -p "$dest_dir"
         fi
-        
+
         # Copy files
         if [[ "$force" == "1" ]]; then
             cp -r "${source_dir}/." "${dest_dir}/"
@@ -152,14 +152,14 @@ copy_assets() {
 # Main bootstrap orchestration - calls all helpers
 bootstrap_config() {
     log "Bootstrapping OpenCode configuration..."
-    
+
     local config_dir
     config_dir=$(derive_config_dir "$CONFIG_PATH")
-    
+
     create_config_dir "$config_dir"
-    
+
     copy_config "$DEFAULT_CONFIG_SOURCE" "$CONFIG_PATH"
-    
+
     # Copy assets from all modules
     if [[ -d "$MODULES_PATH" ]]; then
         local module
@@ -169,7 +169,7 @@ bootstrap_config() {
             fi
         done
     fi
-    
+
     log_success "Configuration bootstrap complete"
 }
 
