@@ -243,6 +243,177 @@ test_modules() {
     fi
 }
 
+# Test: Bootstrap creates config from default template
+test_bootstrap_creates_config() {
+    log_section "Testing Bootstrap Creates Config"
+
+    local test_dir="${TEST_WORKSPACE}/bootstrap-config-test"
+    mkdir -p "${test_dir}"
+
+    # Run container with fresh workspace (no existing config)
+    local config_created
+    config_created=$(${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        "${IMAGE_NAME}" \
+        bash -c 'test -f /workspace/.config/opencode/opencode.json && echo "yes" || echo "no"' 2>/dev/null || echo "no")
+
+    if [[ "${config_created}" == "yes" ]]; then
+        log_pass "Bootstrap creates config file from default template"
+    else
+        log_fail "Bootstrap did not create config file"
+    fi
+
+    # Verify config is valid JSON
+    local json_valid
+    json_valid=$(${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        "${IMAGE_NAME}" \
+        bash -c 'jq empty /workspace/.config/opencode/opencode.json 2>/dev/null && echo "yes" || echo "no"' 2>/dev/null || echo "no")
+
+    if [[ "${json_valid}" == "yes" ]]; then
+        log_pass "Bootstrap config is valid JSON"
+    else
+        log_fail "Bootstrap config is not valid JSON"
+    fi
+
+    rm -rf "${test_dir}"
+}
+
+# Test: Bootstrap copies plugin assets
+test_bootstrap_copies_assets() {
+    log_section "Testing Bootstrap Copies Assets"
+
+    local test_dir="${TEST_WORKSPACE}/bootstrap-assets-test"
+    mkdir -p "${test_dir}"
+
+    # Run container to trigger bootstrap
+    ${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        "${IMAGE_NAME}" \
+        bash -c 'exit 0' 2>/dev/null || true
+
+    # Check for asset directories
+    local asset_dirs=("skills" "agents" "commands")
+    local found_count=0
+
+    for asset_dir in "${asset_dirs[@]}"; do
+        local has_files
+        has_files=$(${CONTAINER_RUNTIME} run --rm \
+            -v "${test_dir}:/workspace" \
+            "${IMAGE_NAME}" \
+            bash -c "ls -1 /workspace/.config/opencode/${asset_dir} 2>/dev/null | wc -l" 2>/dev/null || echo "0")
+
+        if [[ "${has_files}" -gt 0 ]]; then
+            log_pass "Bootstrap copies ${asset_dir}/ directory (${has_files} files)"
+            ((found_count++)) || true
+        else
+            log_skip "No ${asset_dir}/ directory found (may not exist in modules)"
+        fi
+    done
+
+    if [[ "${found_count}" -gt 0 ]]; then
+        log_pass "Bootstrap copied ${found_count}/${#asset_dirs[@]} asset types"
+    else
+        log_skip "No asset directories found (modules may not include skills/agents/commands)"
+    fi
+
+    rm -rf "${test_dir}"
+}
+
+# Test: Bootstrap preserves existing config (no force)
+test_bootstrap_preserves_existing() {
+    log_section "Testing Bootstrap Preserves Existing Config"
+
+    local test_dir="${TEST_WORKSPACE}/bootstrap-preserve-test"
+    mkdir -p "${test_dir}/.config/opencode"
+
+    # Create custom config with unique marker
+    local custom_config='{"$schema":"https://opencode.ai/config.json","plugin":["custom-test-plugin"],"custom_marker":"preserve_test_12345"}'
+    echo "${custom_config}" > "${test_dir}/.config/opencode/opencode.json"
+
+    # Run container WITHOUT force flag
+    ${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        -e OPENCODE_BOOTSTRAP_FORCE=0 \
+        "${IMAGE_NAME}" \
+        bash -c 'exit 0' 2>/dev/null || true
+
+    # Verify custom marker is preserved
+    local marker_preserved
+    marker_preserved=$(${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        "${IMAGE_NAME}" \
+        bash -c 'jq -r ".custom_marker // empty" /workspace/.config/opencode/opencode.json 2>/dev/null' 2>/dev/null || echo "")
+
+    if [[ "${marker_preserved}" == "preserve_test_12345" ]]; then
+        log_pass "Bootstrap preserves existing config when OPENCODE_BOOTSTRAP_FORCE=0"
+    else
+        log_fail "Bootstrap overwrote existing config (marker lost: got '${marker_preserved}')"
+    fi
+
+    # Verify custom plugin is still there
+    local plugin_preserved
+    plugin_preserved=$(${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        "${IMAGE_NAME}" \
+        bash -c 'jq -r ".plugin[0] // empty" /workspace/.config/opencode/opencode.json 2>/dev/null' 2>/dev/null || echo "")
+
+    if [[ "${plugin_preserved}" == "custom-test-plugin" ]]; then
+        log_pass "Bootstrap preserves custom plugin configuration"
+    else
+        log_fail "Bootstrap modified plugin configuration (got '${plugin_preserved}')"
+    fi
+
+    rm -rf "${test_dir}"
+}
+
+# Test: Bootstrap overwrites with force
+test_bootstrap_force_overwrites() {
+    log_section "Testing Bootstrap Force Overwrites Config"
+
+    local test_dir="${TEST_WORKSPACE}/bootstrap-force-test"
+    mkdir -p "${test_dir}/.config/opencode"
+
+    # Create custom config with unique marker
+    local custom_config='{"$schema":"https://opencode.ai/config.json","plugin":["should-be-overwritten"],"force_test_marker":"delete_me"}'
+    echo "${custom_config}" > "${test_dir}/.config/opencode/opencode.json"
+
+    # Run container WITH force flag
+    ${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        -e OPENCODE_BOOTSTRAP_FORCE=1 \
+        "${IMAGE_NAME}" \
+        bash -c 'exit 0' 2>/dev/null || true
+
+    # Verify marker is gone (config was overwritten)
+    local marker_gone
+    marker_gone=$(${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        "${IMAGE_NAME}" \
+        bash -c 'jq -r ".force_test_marker // empty" /workspace/.config/opencode/opencode.json 2>/dev/null' 2>/dev/null || echo "")
+
+    if [[ "${marker_gone}" == "" ]]; then
+        log_pass "Bootstrap overwrites config when OPENCODE_BOOTSTRAP_FORCE=1"
+    else
+        log_fail "Bootstrap did not overwrite config (marker still present: '${marker_gone}')"
+    fi
+
+    # Verify old plugin is gone
+    local plugin_overwritten
+    plugin_overwritten=$(${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        "${IMAGE_NAME}" \
+        bash -c 'jq -r ".plugin[0] // empty" /workspace/.config/opencode/opencode.json 2>/dev/null' 2>/dev/null || echo "")
+
+    if [[ "${plugin_overwritten}" != "should-be-overwritten" ]]; then
+        log_pass "Bootstrap replaced custom plugins with defaults"
+    else
+        log_fail "Bootstrap kept old plugin configuration (got '${plugin_overwritten}')"
+    fi
+
+    rm -rf "${test_dir}"
+}
+
 # Test: User and permissions
 test_user_permissions() {
     log_section "Testing User and Permissions"
@@ -407,6 +578,10 @@ main() {
     test_configuration
     test_directory_structure
     test_modules
+    test_bootstrap_creates_config
+    test_bootstrap_copies_assets
+    test_bootstrap_preserves_existing
+    test_bootstrap_force_overwrites
     test_user_permissions
     test_environment
     test_entrypoint
