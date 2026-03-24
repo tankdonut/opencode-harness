@@ -31,8 +31,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     npm \
     python3 \
     python3-pip \
+    unzip \
     yq \
     && rm -rf /var/lib/apt/lists/*
+
+# Install bun runtime for oh-my-opencode
+# Using npm to install bun globally (cleaner than curl|bash in container)
+RUN npm install -g bun
 
 # Copy vendor binaries from tools stage
 COPY --from=tools /dist/ /vendor/bin/

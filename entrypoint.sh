@@ -14,6 +14,18 @@ readonly MODULES_PATH="/workspace/modules"
 readonly VENDOR_BIN="/vendor/bin"
 readonly DEFAULT_CONFIG_SOURCE="${DEFAULT_CONFIG_SOURCE:-/app/opencode.json}"
 
+# Oh-My-OpenCode (OMO) Configuration
+# OMO_ENABLED: Enable oh-my-opencode installation (set to any value to enable)
+# OMO_FORCE: Force reinstallation even if config exists
+# Subscription flags (passed to bunx oh-my-opencode install):
+# OMO_CLAUDE: Claude subscription (yes|no|max20)
+# OMO_GEMINI: Gemini subscription (yes|no)
+# OMO_COPILOT: GitHub Copilot subscription (yes|no)
+# OMO_OPENAI: OpenAI subscription (yes|no)
+# OMO_OPENCODE_GO: OpenCode Go subscription (yes|no)
+# OMO_OPENCODE_ZEN: OpenCode Zen subscription (yes|no)
+# OMO_ZAI_CODING_PLAN: Z.ai Coding Plan subscription (yes|no)
+
 # Colors for output
 if [[ -z "${RED:-}" ]]; then readonly RED='\033[0;31m'; fi
 if [[ -z "${GREEN:-}" ]]; then readonly GREEN='\033[0;32m'; fi
@@ -173,6 +185,86 @@ bootstrap_config() {
     log_success "Configuration bootstrap complete"
 }
 
+# =============================================================================
+# Oh-My-OpenCode Installation
+# =============================================================================
+
+# Install oh-my-opencode if enabled and needed
+# Requires: OMO_ENABLED to be set
+# Skips if: oh-my-opencode.json exists and OMO_FORCE is not set
+install_oh_my_opencode() {
+    # Check if OMO is enabled
+    if [[ -z "${OMO_ENABLED:-}" ]]; then
+        log "OMO not enabled (set OMO_ENABLED to enable)"
+        return 0
+    fi
+
+    log "Oh-My-OpenCode installation enabled"
+
+    # Derive config directory from CONFIG_PATH
+    local config_dir
+    config_dir=$(derive_config_dir "$CONFIG_PATH")
+
+    # Path to oh-my-opencode config
+    local omo_config="${config_dir}/oh-my-opencode.json"
+
+    # Check if we need to install
+    local should_install=false
+
+    if [[ -f "$omo_config" ]]; then
+        if [[ -n "${OMO_FORCE:-}" ]]; then
+            log "OMO_FORCE set, will reinstall"
+            should_install=true
+        else
+            log "oh-my-opencode.json exists, skipping (set OMO_FORCE to reinstall)"
+            return 0
+        fi
+    else
+        log "oh-my-opencode.json not found, will install"
+        should_install=true
+    fi
+
+    if [[ "$should_install" != "true" ]]; then
+        return 0
+    fi
+
+    # Build subscription flags
+    local claude_flag="${OMO_CLAUDE:-no}"
+    local gemini_flag="${OMO_GEMINI:-no}"
+    local copilot_flag="${OMO_COPILOT:-no}"
+    local openai_flag="${OMO_OPENAI:-no}"
+    local opencode_go_flag="${OMO_OPENCODE_GO:-no}"
+    local opencode_zen_flag="${OMO_OPENCODE_ZEN:-no}"
+    local zai_coding_plan_flag="${OMO_ZAI_CODING_PLAN:-no}"
+
+    # Build the install command
+    local install_cmd="bunx oh-my-opencode install --no-tui"
+    install_cmd+=" --claude=${claude_flag}"
+    install_cmd+=" --gemini=${gemini_flag}"
+    install_cmd+=" --copilot=${copilot_flag}"
+    install_cmd+=" --openai=${openai_flag}"
+    install_cmd+=" --opencode-go=${opencode_go_flag}"
+    install_cmd+=" --opencode-zen=${opencode_zen_flag}"
+    install_cmd+=" --zai-coding-plan=${zai_coding_plan_flag}"
+
+    log "Running: ${install_cmd}"
+
+    # Execute installation
+    if ${install_cmd}; then
+        log_success "Oh-My-OpenCode installed successfully"
+        
+        # Verify config was created
+        if [[ -f "$omo_config" ]]; then
+            log "Config created at: ${omo_config}"
+        else
+            log_warn "Config file not found at ${omo_config}"
+        fi
+    else
+        log_error "Oh-My-OpenCode installation failed"
+        return 1
+    fi
+}
+
 # Validate environment
 validate_environment() {
     log "Validating environment..."
@@ -318,17 +410,17 @@ main() {
     log ""
 
     validate_environment || exit 1
+    init_submodules || true
     verify_opencode || exit 1
     bootstrap_config || exit 1
     validate_config || exit 1
-    init_submodules || true  # Don't fail if submodules aren't available
+    install_oh_my_opencode || true
     verify_installation || exit 1
 
     print_summary
 
     log_success "Bootstrap completed successfully!"
 
-    # If arguments provided, execute them (for custom entry points)
     if [[ $# -gt 0 ]]; then
         log "Executing: $*"
         exec "$@"
