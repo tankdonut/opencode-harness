@@ -17,6 +17,13 @@ opencode-harness/
 ├── .github/                    # GitHub configuration
 │   └── workflows/              # CI/CD workflows
 │       └── ci.yml              # Main CI pipeline
+├── .opencode/                   # OpenCode configuration
+│   ├── opencode.json            # Plugin configuration
+│   ├── tui.json                 # TUI theme configuration
+│   └── themes/                  # Custom theme files
+│       ├── ayu-dark.json
+│       ├── lavi.json
+│       └── moonlight.json
 ├── modules/                    # Git submodules (OpenCode plugins)
 │   ├── everything-claude-code/ # 16 agents, 65 skills, 40 commands
 │   ├── oh-my-openagent/       # Multi-agent system with Sisyphus orchestrator
@@ -30,7 +37,6 @@ opencode-harness/
 ├── Containerfile               # Main container definition
 ├── entrypoint.sh               # Container entrypoint
 ├── setup.sh                    # Host bootstrap script
-├── opencode.json               # OpenCode plugin configuration
 ├── .gitignore                  # Git exclusions
 ├── AGENTS.md                   # This file
 └── README.md                   # Project documentation
@@ -84,7 +90,7 @@ git rm -f modules/<name>
 
 ```bash
 # Verify OpenCode config
-cat opencode.json
+cat .opencode/opencode.json
 
 # Check submodule status
 git submodule status
@@ -207,7 +213,7 @@ RUN apt-get install -y stuff
 COPY . .
 ```
 
-### OpenCode Configuration (opencode.json)
+### OpenCode Configuration (.opencode/opencode.json)
 
 ```json
 {
@@ -224,7 +230,7 @@ COPY . .
 **Always validate JSON** before committing. Use `jq` to verify:
 
 ```bash
-jq . opencode.json
+jq . .opencode/opencode.json
 ```
 
 ## Boundaries & Constraints
@@ -233,7 +239,7 @@ jq . opencode.json
 
 - **Run `git submodule update --init --recursive`** after cloning or when submodules change
 - **Test container builds** before committing Containerfile changes
-- **Validate JSON** in opencode.json with `jq` or equivalent
+- **Validate JSON** in .opencode/opencode.json with `jq` or equivalent
 - **Document new plugins** added to modules/ in README.md
 - **Use `set -euo pipefail`** in all bash scripts
 - **Provide both Podman and Docker** commands (Podman preferred)
@@ -272,10 +278,10 @@ jq . opencode.json
 
 1. Research the plugin's OpenCode compatibility
 2. Add as submodule: `git submodule add <url> modules/<name>`
-3. Update `opencode.json` to include the plugin
+3. Update `.opencode/opencode.json` to include the plugin
 4. Update README.md with plugin description
 5. Test in container: `podman build --no-cache -t test -f Containerfile .`
-6. Commit changes: `git add .gitmodules modules/ opencode.json README.md && git commit -m "feat: add <name> plugin"`
+6. Commit changes: `git add .gitmodules modules/ .opencode/opencode.json README.md && git commit -m "feat: add <name> plugin"`
 
 ### Updating Container Bootstrap
 
@@ -383,7 +389,7 @@ podman pull ghcr.io/tankdonut/tools:latest
 ```bash
 # Symptom: Plugins not loaded
 # Solution: Check opencode.json syntax
-jq . opencode.json
+jq . .opencode/opencode.json
 # Verify plugin names match submodule directory names
 ```
 
@@ -401,7 +407,7 @@ ENTRYPOINT ["/usr/local/bin/entrypoint"]
 ```bash
 # Symptom: opencode.json missing in container
 # Solution: COPY it before running entrypoint
-COPY opencode.json /app/opencode.json
+COPY .opencode/opencode.json /opencode/default/opencode.json
 RUN /usr/local/bin/entrypoint
 ```
 

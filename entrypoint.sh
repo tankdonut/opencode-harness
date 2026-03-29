@@ -9,10 +9,13 @@ set -euo pipefail
 
 # Configuration
 readonly OPENCODE_VERSION="${OPENCODE_VERSION:-1.2.27}"
+readonly OPENCODE_THEME="${OPENCODE_THEME:-ayu-dark}"
 readonly CONFIG_PATH="${OPENCODE_CONFIG:-/workspace/.config/opencode/opencode.json}"
 readonly MODULES_PATH="/workspace/modules"
 readonly VENDOR_BIN="/vendor/bin"
-readonly DEFAULT_CONFIG_SOURCE="${DEFAULT_CONFIG_SOURCE:-/app/opencode.json}"
+readonly DEFAULT_CONFIG_SOURCE="${DEFAULT_CONFIG_SOURCE:-/opencode/default/opencode.json}"
+readonly DEFAULT_TUI_SOURCE="${DEFAULT_TUI_SOURCE:-/opencode/default/tui.json}"
+readonly DEFAULT_THEMES_SOURCE="${DEFAULT_THEMES_SOURCE:-/opencode/default/themes}"
 
 # Oh-My-OpenCode (OMO) Configuration
 # OMO_ENABLED: Enable oh-my-opencode installation (set to any value to enable)
@@ -161,6 +164,28 @@ copy_assets() {
     done
 }
 
+copy_theme_config() {
+    local config_dir="${1:-}"
+
+    if [[ -z "$config_dir" ]]; then
+        log_error "copy_theme_config: config_dir is required"
+        return 1
+    fi
+
+    if [[ -f "$DEFAULT_TUI_SOURCE" ]]; then
+        copy_config "$DEFAULT_TUI_SOURCE" "${config_dir}/tui.json"
+    fi
+
+    if [[ -d "$DEFAULT_THEMES_SOURCE" ]]; then
+        local themes_dest="${config_dir}/themes"
+        if [[ ! -d "$themes_dest" ]]; then
+            mkdir -p "$themes_dest"
+        fi
+        cp -rn "${DEFAULT_THEMES_SOURCE}/." "${themes_dest}/"
+        log_success "Theme files copied (${DEFAULT_THEMES_SOURCE})"
+    fi
+}
+
 # Main bootstrap orchestration - calls all helpers
 bootstrap_config() {
     log "Bootstrapping OpenCode configuration..."
@@ -171,6 +196,7 @@ bootstrap_config() {
     create_config_dir "$config_dir"
 
     copy_config "$DEFAULT_CONFIG_SOURCE" "$CONFIG_PATH"
+    copy_theme_config "$config_dir"
 
     # Copy assets from all modules
     if [[ -d "$MODULES_PATH" ]]; then
@@ -396,6 +422,7 @@ print_summary() {
     log ""
     log "OpenCode Version: $(opencode --version 2>/dev/null | head -n1 || echo 'unknown')"
     log "Config Path: ${CONFIG_PATH}"
+    log "Theme: ${OPENCODE_THEME}"
     log "Plugin Count: $(jq '.plugin | length' "$CONFIG_PATH")"
     log ""
     log "To start using OpenCode:"

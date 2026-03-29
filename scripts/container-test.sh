@@ -158,10 +158,10 @@ test_configuration() {
     log_section "Testing Configuration"
 
     # Check opencode.json exists
-    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /workspace/.config/opencode/opencode.json; then
-        log_pass "opencode.json exists at /workspace/.config/opencode/opencode.json"
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /opencode/default/opencode.json; then
+        log_pass "opencode.json exists at /opencode/default/opencode.json"
     else
-        log_fail "opencode.json not found at /workspace/.config/opencode/opencode.json"
+        log_fail "opencode.json not found at /opencode/default/opencode.json"
         return
     fi
 

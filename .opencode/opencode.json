@@ -3,7 +3,6 @@
     "plugin": [
         "@tarquinen/opencode-dcp@latest",
         "cc-safety-net",
-        "ecc-universal",
         "oh-my-opencode"
     ]
 }

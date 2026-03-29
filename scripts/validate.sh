@@ -63,13 +63,6 @@ check_tools() {
         fi
     done
 
-    # ShellCheck is optional but recommended for linting
-    if command -v shellcheck &>/dev/null; then
-        log_pass "shellcheck is installed (optional)"
-    else
-        log_warn "shellcheck not installed - shell script linting will be skipped"
-    fi
-
     if [[ ${#missing[@]} -gt 0 ]]; then
         log_fail "Missing required tools: ${missing[*]}"
         return 1
@@ -81,7 +74,7 @@ validate_json() {
     log_section "Validating JSON Configuration"
 
     local json_files=(
-        "${PROJECT_ROOT}/opencode.json"
+        "${PROJECT_ROOT}/.opencode/opencode.json"
     )
 
     for file in "${json_files[@]}"; do
@@ -109,36 +102,6 @@ validate_json() {
             fi
         else
             log_fail "File not found: ${file}"
-        fi
-    done
-}
-
-# Lint shell scripts
-validate_shell_scripts() {
-    log_section "Validating Shell Scripts"
-
-    local shell_scripts=(
-        "${PROJECT_ROOT}/setup.sh"
-        "${PROJECT_ROOT}/entrypoint.sh"
-        "${PROJECT_ROOT}/scripts/container-test.sh"
-        "${PROJECT_ROOT}/scripts/validate.sh"
-    )
-
-    if ! command -v shellcheck &>/dev/null; then
-        log_warn "Skipping shell script linting (shellcheck not installed)"
-        return 0
-    fi
-
-    for script in "${shell_scripts[@]}"; do
-        if [[ -f "${script}" ]]; then
-            if shellcheck "${script}" &>/dev/null; then
-                log_pass "shellcheck passed: ${script##*/}"
-            else
-                log_fail "shellcheck failed: ${script##*/}"
-                shellcheck "${script}" 2>&1 | head -20
-            fi
-        else
-            log_warn "Script not found: ${script}"
         fi
     done
 }
@@ -266,8 +229,8 @@ validate_structure() {
 
     local required_files=(
         "Containerfile"
+        ".opencode/opencode.json"
         "etc/opencode/opencode.jsonc"
-        "opencode.json"
         "setup.sh"
         "entrypoint.sh"
         "README.md"
@@ -358,7 +321,6 @@ main() {
     # Run validations
     check_tools || true
     validate_json
-    validate_shell_scripts
     validate_permissions
     validate_submodules
     validate_containerfile

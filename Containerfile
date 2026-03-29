@@ -82,7 +82,9 @@ RUN useradd -m -d /workspace -u 1001 -s /bin/bash opencode || useradd -m -d /wor
 WORKDIR /workspace
 
 # Copy configuration files
-COPY --chown=opencode:opencode opencode.json /app/opencode.json
+COPY --chown=opencode:opencode .opencode/opencode.json /opencode/default/opencode.json
+COPY --chown=opencode:opencode .opencode/tui.json /opencode/default/tui.json
+COPY --chown=opencode:opencode .opencode/themes/ /opencode/default/themes/
 COPY --chown=opencode:opencode etc/opencode/opencode.jsonc /etc/opencode/opencode.jsonc
 COPY --chown=opencode:opencode modules/ /workspace/modules/
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
@@ -90,6 +92,7 @@ COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 # Environment configuration
 ENV PATH="/vendor/bin:${PATH}" \
     OPENCODE_CONFIG="/workspace/.config/opencode/opencode.json" \
+    OPENCODE_THEME="ayu-dark" \
     OPENCODE_VERSION="${OPENCODE_VERSION}"
 
 # Add labels for image metadata

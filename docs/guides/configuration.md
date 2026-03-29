@@ -39,7 +39,7 @@ Container-specific configuration with extended features:
 {
     "$schema": "https://opencode.ai/config.json",
     // Inherit from main configuration
-    "extends": "/app/opencode.json",
+    "extends": "/opencode/default/opencode.json",
 
     // Container-specific overrides
     "plugin": [
