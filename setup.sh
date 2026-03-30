@@ -201,7 +201,7 @@ print_summary() {
     echo "Next steps:"
     echo "  1. Review configuration: ${CONFIG_PATH}"
     echo "  2. Start OpenCode: opencode"
-    echo "  3. Build container: podman build -t opencode-harness -f Containerfile ."
+    echo "  3. Build container: ./scripts/build.sh"
     echo ""
     echo "Documentation:"
     echo "  - README.md - Project overview"

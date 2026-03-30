@@ -4,7 +4,9 @@
 # OpenCode Harness Container Image
 # ============================================
 # Build reads version from .opencode-version:
-#   podman build --build-arg OPENCODE_VERSION=$(cat .opencode-version) -t opencode-harness -f Containerfile .
+#   ./scripts/build.sh
+# Or with explicit options:
+#   ./scripts/build.sh --tag my-tag --runtime docker --no-cache
 #
 # Image tags include OpenCode version for traceability:
 #   opencode-harness:latest  - current default
