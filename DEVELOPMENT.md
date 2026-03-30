@@ -11,7 +11,7 @@ Run validation and container tests locally before pushing:
 ./scripts/validate.sh
 
 # Build container
-podman build -t opencode-harness:test -f Containerfile .
+./scripts/build.sh --tag opencode-harness:test
 
 # Run container test suite
 ./scripts/container-test.sh opencode-harness:test
@@ -22,7 +22,7 @@ podman build -t opencode-harness:test -f Containerfile .
 1. **Build without cache**:
 
    ```bash
-   podman build --no-cache -t opencode-harness-test -f Containerfile .
+   ./scripts/build.sh --tag opencode-harness-test --no-cache
    ```
 
 2. **Run validation tests**:
@@ -64,7 +64,7 @@ shellcheck setup.sh entrypoint.sh scripts/*.sh
 
 1. Make changes
 2. Run validation: `./scripts/validate.sh`
-3. Build and test: `podman build -t test -f Containerfile . && ./scripts/container-test.sh test`
+3. Build and test: `./scripts/build.sh --tag test && ./scripts/container-test.sh test`
 4. Commit with conventional commits:
 
    ```bash
@@ -91,7 +91,7 @@ This project includes automated CI/CD via GitHub Actions:
 ./scripts/validate.sh
 
 # Build and test like CI does
-podman build -t opencode-harness:ci -f Containerfile .
+./scripts/build.sh --tag opencode-harness:ci
 ./scripts/container-test.sh opencode-harness:ci podman
 ```
 
@@ -204,7 +204,7 @@ EXAMPLES:
 3. Test in container:
 
    ```bash
-   podman build --no-cache -t opencode-harness -f Containerfile .
+   ./scripts/build.sh --tag opencode-harness --no-cache
    ```
 
 ### Updating Plugins
@@ -231,21 +231,24 @@ git commit -m "chore: update <plugin-name>"
 
 ### Build with OpenCode Version
 
-The OpenCode version is managed in `.opencode-version` (single source of truth). Build reads the version from this file:
+The OpenCode version is managed in `.opencode-version` (single source of truth). The build script reads the version from this file automatically:
 
 ```bash
-# Build using version from .opencode-version
-podman build --build-arg OPENCODE_VERSION=$(cat .opencode-version) -t opencode-harness -f Containerfile .
+./scripts/build.sh
+```
 
-# Or with Docker
-docker build --build-arg OPENCODE_VERSION=$(cat .opencode-version) -t opencode-harness -f Containerfile .
+To override the version or use Docker:
+
+```bash
+./scripts/build.sh --version 1.4.0
+./scripts/build.sh --runtime docker
 ```
 
 To change the OpenCode version, update `.opencode-version` and rebuild:
 
 ```bash
 echo "1.4.0" > .opencode-version
-podman build --build-arg OPENCODE_VERSION=$(cat .opencode-version) -t opencode-harness -f Containerfile .
+./scripts/build.sh
 ```
 
 ## Security Considerations

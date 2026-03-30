@@ -7,7 +7,7 @@ Thank you for considering contributing to OpenCode Harness! This project aims to
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Test in container (`podman build --no-cache -f Containerfile .`)
+4. Test in container (`./scripts/build.sh --no-cache`)
 5. Commit your changes (`git commit -m "feat: add amazing feature"`)
 6. Push to branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
@@ -31,7 +31,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 Before submitting a PR:
 
 1. Run validation: `./scripts/validate.sh`
-2. Build and test: `podman build -t test -f Containerfile . && ./scripts/container-test.sh test`
+2. Build and test: `./scripts/build.sh --tag test && ./scripts/container-test.sh test`
 3. Ensure no new vulnerabilities: `podman image scan test`
 
 ## Code Style

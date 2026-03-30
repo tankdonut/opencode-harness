@@ -62,9 +62,9 @@ git submodule update --init --recursive
 ./setup.sh
 
 # Build container image
-podman build -t opencode-harness -f Containerfile .
-# OR
-docker build -t opencode-harness -f Containerfile .
+./scripts/build.sh
+# OR with options:
+# ./scripts/build.sh --tag my-tag --runtime docker --no-cache
 
 # Run container with OpenCode pre-configured
 podman run -it --rm opencode-harness
@@ -96,7 +96,7 @@ cat .opencode/opencode.json
 git submodule status
 
 # Test container build
-podman build --no-cache -t opencode-harness -f Containerfile .
+./scripts/build.sh --tag opencode-harness --no-cache
 ```
 
 ### CI/CD
@@ -112,7 +112,7 @@ podman build --no-cache -t opencode-harness -f Containerfile .
 ./scripts/container-test.sh opencode-harness:latest docker
 
 # Build and test like CI
-podman build -t opencode-harness:ci -f Containerfile .
+./scripts/build.sh --tag opencode-harness:ci
 ./scripts/container-test.sh opencode-harness:ci
 ```
 
@@ -136,7 +136,7 @@ podman history opencode-harness
 podman images opencode-harness
 
 # View build logs
-podman build -t opencode-harness -f Containerfile . 2>&1 | tee build.log
+./scripts/build.sh 2>&1 | tee build.log
 
 # Scan for vulnerabilities
 podman image scan opencode-harness
@@ -280,14 +280,14 @@ jq . .opencode/opencode.json
 2. Add as submodule: `git submodule add <url> modules/<name>`
 3. Update `.opencode/opencode.json` to include the plugin
 4. Update README.md with plugin description
-5. Test in container: `podman build --no-cache -t test -f Containerfile .`
+5. Test in container: `./scripts/build.sh --tag test --no-cache`
 6. Commit changes: `git add .gitmodules modules/ .opencode/opencode.json README.md && git commit -m "feat: add <name> plugin"`
 
 ### Updating Container Bootstrap
 
 1. Edit `entrypoint.sh` with new setup steps
 2. Update `Containerfile` to call bootstrap script
-3. Build test: `podman build --no-cache -t test -f Containerfile .`
+3. Build test: `./scripts/build.sh --tag test --no-cache`
 4. Run test: `podman run -it --rm test bash -c "opencode --version"`
 5. Verify OpenCode config is loaded correctly
 6. Commit if tests pass
@@ -340,7 +340,7 @@ Before committing container changes:
 ./scripts/validate.sh
 
 # 2. Test container build
-podman build --no-cache -t opencode-harness-test -f Containerfile .
+./scripts/build.sh --tag opencode-harness-test --no-cache
 
 # 3. Run container test suite
 ./scripts/container-test.sh opencode-harness-test
