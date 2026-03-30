@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # Configuration
-readonly OPENCODE_VERSION="${OPENCODE_VERSION:-1.2.27}"
+readonly OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat /etc/opencode-version 2>/dev/null | tr -d '[:space:]')}"
 readonly OPENCODE_THEME="${OPENCODE_THEME:-ayu-dark}"
 readonly CONFIG_PATH="${OPENCODE_CONFIG:-/workspace/.config/opencode/opencode.json}"
 readonly MODULES_PATH="/workspace/modules"

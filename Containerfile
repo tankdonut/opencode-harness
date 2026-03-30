@@ -3,11 +3,10 @@
 # ============================================
 # OpenCode Harness Container Image
 # ============================================
-# Build with specific OpenCode version:
-#   podman build --build-arg OPENCODE_VERSION=1.2.27 -t opencode-harness:1.2.27 -f Containerfile .
+# Build reads version from .opencode-version:
+#   podman build --build-arg OPENCODE_VERSION=$(cat .opencode-version) -t opencode-harness -f Containerfile .
 #
 # Image tags include OpenCode version for traceability:
-#   opencode-harness:1.2.27  - specific version
 #   opencode-harness:latest  - current default
 # ============================================
 
@@ -17,7 +16,7 @@ FROM docker.io/library/ubuntu:24.04
 
 # Build arguments
 ARG DEBIAN_FRONTEND=noninteractive
-ARG OPENCODE_VERSION=1.2.27
+ARG OPENCODE_VERSION
 ARG TARGETARCH=amd64
 ARG TARGETVARIANT=
 
@@ -42,9 +41,16 @@ RUN npm install -g bun
 # Copy vendor binaries from tools stage
 COPY --from=tools /dist/ /vendor/bin/
 
+# Copy version file (single source of truth for OpenCode version)
+COPY .opencode-version /etc/opencode-version
+
 # Download and install OpenCode from GitHub releases
+# Version resolved from --build-arg or /etc/opencode-version
 # This happens at build time for reproducibility
 RUN set -eux; \
+    # Resolve version from build-arg or version file \
+    OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat /etc/opencode-version | tr -d '[:space:]')}"; \
+    \
     # Determine architecture mapping \
     case "$(uname -m)" in \
     x86_64)  OPENCODE_ARCH="x64" ;; \
