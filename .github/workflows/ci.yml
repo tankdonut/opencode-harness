@@ -19,8 +19,6 @@ on:
 env:
   IMAGE_NAME: opencode-harness
   IMAGE_TAG: ${{ github.sha }}
-  # Default OpenCode version - update this when bumping the default version
-  OPENCODE_VERSION: "1.2.27"
 
 jobs:
   # Lint and validate before building
@@ -71,20 +69,26 @@ jobs:
         run: |
           echo "Using Docker (pre-installed on GitHub runners)"
           echo "CONTAINER_CMD=docker" >> $GITHUB_ENV
-          echo "CONTAINER_BUILD_CMD=docker" >> $GITHUB_ENV
+
+      - name: Resolve OpenCode version
+        run: |
+          OPENCODE_VERSION=$(cat .opencode-version | tr -d '[:space:]')
+          echo "OPENCODE_VERSION=${OPENCODE_VERSION}" >> $GITHUB_ENV
+          echo "OpenCode version: ${OPENCODE_VERSION}"
 
       - name: Build container image
         run: |
-          echo "Building container image with OpenCode ${OPENCODE_VERSION}..."
-          ${{ env.CONTAINER_BUILD_CMD }} build \
-            --build-arg OPENCODE_VERSION=${{ env.OPENCODE_VERSION }} \
-            -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
-            -t ${{ env.IMAGE_NAME }}:${{ env.OPENCODE_VERSION }} \
-            -t ${{ env.IMAGE_NAME }}:latest \
-            -f Containerfile \
+          chmod +x scripts/build.sh
+          ./scripts/build.sh \
+            --runtime docker \
             --no-cache \
-            .
-          echo "✓ Container image built successfully"
+            --tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Tag image
+        run: |
+          ${{ env.CONTAINER_CMD }} tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_NAME }}:${{ env.OPENCODE_VERSION }}
+          ${{ env.CONTAINER_CMD }} tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_NAME }}:latest
+          echo "✓ Image tagged: ${{ env.IMAGE_TAG }}, ${{ env.OPENCODE_VERSION }}, latest"
 
       - name: Run container tests
         run: |
