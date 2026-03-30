@@ -6,7 +6,7 @@ This guide covers how to effectively use OpenCode Harness in different environme
 
 ### Host Environment
 
-After running `setup.sh`, OpenCode is available globally with all harness plugins loaded:
+After running `./scripts/local-setup.sh`, OpenCode is available globally with all harness plugins loaded:
 
 ```bash
 # Basic OpenCode commands

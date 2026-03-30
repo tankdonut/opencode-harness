@@ -50,7 +50,7 @@ git submodule update --init --recursive
 #### Step 2: Run Setup Script
 
 ```bash
-./setup.sh
+./scripts/local-setup.sh
 ```
 
 The setup script will:
@@ -100,7 +100,7 @@ npm install -g @opencode/cli@latest
 
 ```bash
 # Fix permissions on setup script
-chmod +x setup.sh
+chmod +x scripts/local-setup.sh
 
 # If npm global installation fails, use npx
 npx @opencode/cli --version
@@ -207,7 +207,7 @@ git clone --recurse-submodules https://github.com/tankdonut/opencode-harness.git
 cd opencode-harness
 
 # Set up development environment
-./setup.sh
+./scripts/local-setup.sh
 
 # Run validation suite
 ./scripts/validate.sh
@@ -237,7 +237,7 @@ sudo apt-get install -y podman
 # Follow main installation steps
 git clone --recurse-submodules https://github.com/tankdonut/opencode-harness.git
 cd opencode-harness
-./setup.sh
+./scripts/local-setup.sh
 ```
 
 ### CentOS/RHEL/Fedora
@@ -253,7 +253,7 @@ sudo yum install -y git nodejs npm curl
 # Follow main installation steps
 git clone --recurse-submodules https://github.com/tankdonut/opencode-harness.git
 cd opencode-harness
-./setup.sh
+./scripts/local-setup.sh
 ```
 
 ### macOS
@@ -268,7 +268,7 @@ brew install git node jq podman
 # Follow main installation steps
 git clone --recurse-submodules https://github.com/tankdonut/opencode-harness.git
 cd opencode-harness
-./setup.sh
+./scripts/local-setup.sh
 ```
 
 ### Windows (WSL2)
@@ -284,7 +284,7 @@ sudo apt-get install -y git nodejs npm curl jq
 # Clone and setup
 git clone --recurse-submodules https://github.com/tankdonut/opencode-harness.git
 cd opencode-harness
-./setup.sh
+./scripts/local-setup.sh
 ```
 
 ## Post-Installation Verification

@@ -48,7 +48,7 @@ git clone --recurse-submodules https://github.com/tankdonut/opencode-harness.git
 cd opencode-harness
 
 # Run setup script
-./setup.sh
+./scripts/local-setup.sh
 
 # Verify installation
 opencode --version
@@ -75,7 +75,6 @@ podman run -it --rm opencode-harness bash -c "opencode --version && echo 'Succes
 
 ```text
 opencode-harness/
-├── setup.sh                   # Host installation script
 ├── Containerfile              # Container build definition
 ├── opencode.json              # Plugin configuration
 ├── modules/                   # Git submodules
@@ -83,6 +82,7 @@ opencode-harness/
 │   ├── oh-my-openagent/
 │   └── superpowers/
 ├── scripts/
+│   ├── local-setup.sh         # Host installation script
 │   ├── validate.sh            # Pre-build validation
 │   └── container-test.sh      # Container verification
 ├── AGENTS.md                  # Detailed agent instructions
