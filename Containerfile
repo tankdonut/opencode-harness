@@ -14,7 +14,7 @@
 
 FROM ghcr.io/tankdonut/tools:latest AS tools
 
-FROM docker.io/library/ubuntu:24.04
+FROM docker.io/library/ubuntu:25.10
 
 # Build arguments
 ARG DEBIAN_FRONTEND=noninteractive

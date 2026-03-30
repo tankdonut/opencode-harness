@@ -194,7 +194,7 @@ validate_containerfile() {
 
     # Check for best practices
     local checks=(
-        "FROM.*ubuntu:24.04:Base image uses pinned version"
+        "FROM.*ubuntu:25.10:Base image uses pinned version"
         "USER opencode:Runs as non-root user"
         "rm -rf /var/lib/apt/lists/\*:Cleans apt cache"
         "set -euo pipefail:Error handling in scripts"
