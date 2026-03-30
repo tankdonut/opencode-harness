@@ -190,7 +190,7 @@ install() {
 # ✅ Good - multi-stage, explicit versions, clear comments
 FROM ghcr.io/tankdonut/tools:latest AS tools
 
-FROM docker.io/library/ubuntu:24.04
+FROM docker.io/library/ubuntu:25.10
 
 # Install OpenCode dependencies
 RUN apt-get update && apt-get install -y \
@@ -269,7 +269,7 @@ jq . .opencode/opencode.json
 - **Remove error handling** from shell scripts (`set -euo pipefail`)
 - **Commit `node_modules/` or `vendor/` directories**
 - **Commit secrets** - No API keys, tokens, passwords in Containerfile or entrypoint.sh
-- **Use `latest` tags** - Always pin versions (`ubuntu:24.04` not `ubuntu:latest`)
+- **Use `latest` tags** - Always pin versions (`ubuntu:25.10` not `ubuntu:latest`)
 - **Run as root** - Security risk, creates permission issues
 - **Install unnecessary tools** - Vim, nano, curl (unless required) bloat the image
 
@@ -315,7 +315,7 @@ git commit -m "chore: update <name> submodule"
 ## Security Considerations
 
 - **Never commit `.env` files** - use `.env.example` templates instead
-- **Pin container base image tags** - `ubuntu:24.04` not `ubuntu:latest`
+- **Pin container base image tags** - `ubuntu:25.10` not `ubuntu:latest`
 - **Scan containers for vulnerabilities** - `podman image scan opencode-harness`
 - **Validate submodule URLs** - ensure they point to trusted sources
 - **Review upstream changes** before updating submodules

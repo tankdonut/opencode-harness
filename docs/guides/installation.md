@@ -145,7 +145,7 @@ function install_plugin() {
 
 ```dockerfile
 # Always pin versions, never use 'latest'
-FROM docker.io/library/ubuntu:24.04
+FROM docker.io/library/ubuntu:25.10
 
 # Multi-stage builds for efficiency
 COPY --from=builder /dist/ /vendor/bin/
