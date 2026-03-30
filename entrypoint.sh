@@ -17,8 +17,12 @@ readonly DEFAULT_CONFIG_SOURCE="/opencode/default/opencode.json"
 readonly DEFAULT_TUI_SOURCE="/opencode/default/tui.json"
 readonly DEFAULT_THEMES_SOURCE="/opencode/default/themes"
 
-# Oh-My-OpenCode (OMO) Configuration
-# OMO_ENABLED: Enable oh-my-opencode installation (set to any value to enable)
+# Module Enable/Disable (default: all enabled, set to 0/false/no to disable)
+# ECC_ENABLED:           everything-claude-code module assets
+# OMO_ENABLED:           oh-my-openagent module assets + oh-my-opencode installation
+# SUPERPOWERS_ENABLED:   superpowers module assets
+
+# Oh-My-OpenCode (OMO) Installation Options
 # OMO_FORCE: Force reinstallation even if config exists
 # Subscription flags (passed to bunx oh-my-opencode install):
 # OMO_CLAUDE: Claude subscription (yes|no|max20)
@@ -55,6 +59,26 @@ log_warn() {
 # Check if command exists
 command_exists() {
     command -v "$1" &>/dev/null
+}
+
+is_module_enabled() {
+    local module_name="${1:-}"
+    local flag_name=""
+    local flag_value=""
+
+    case "$module_name" in
+        everything-claude-code) flag_name="ECC_ENABLED" ;;
+        oh-my-openagent)        flag_name="OMO_ENABLED" ;;
+        superpowers)            flag_name="SUPERPOWERS_ENABLED" ;;
+        *)                      return 0 ;;
+    esac
+
+    flag_value="${!flag_name:-1}"
+
+    case "${flag_value,,}" in
+        0|false|no) return 1 ;;
+        *)          return 0 ;;
+    esac
 }
 
 # =============================================================================
@@ -200,10 +224,15 @@ bootstrap_config() {
 
     # Copy assets from all modules
     if [[ -d "$MODULES_PATH" ]]; then
-        local module
+        local module module_name
         for module in "$MODULES_PATH"/*; do
             if [[ -d "$module" ]]; then
-                copy_assets "$module" "$config_dir"
+                module_name=$(basename "$module")
+                if is_module_enabled "$module_name"; then
+                    copy_assets "$module" "$config_dir"
+                else
+                    log "Module ${module_name} disabled, skipping"
+                fi
             fi
         done
     fi
@@ -215,13 +244,9 @@ bootstrap_config() {
 # Oh-My-OpenCode Installation
 # =============================================================================
 
-# Install oh-my-opencode if enabled and needed
-# Requires: OMO_ENABLED to be set
-# Skips if: oh-my-opencode.json exists and OMO_FORCE is not set
 install_oh_my_opencode() {
-    # Check if OMO is enabled
-    if [[ -z "${OMO_ENABLED:-}" ]]; then
-        log "OMO not enabled (set OMO_ENABLED to enable)"
+    if ! is_module_enabled "oh-my-openagent"; then
+        log "OMO module disabled"
         return 0
     fi
 
