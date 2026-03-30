@@ -470,7 +470,7 @@ test_environment() {
     # Check OPENCODE_CONFIG
     local config_value
     config_value=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" bash -c 'echo $OPENCODE_CONFIG')
-    if [[ "${config_value}" == "/workspace/.config/opencode/opencode.json" ]]; then
+    if [[ "${config_value}" == "/opencode/default/opencode.json" ]]; then
         log_pass "OPENCODE_CONFIG set correctly"
     else
         log_fail "OPENCODE_CONFIG not set correctly (got: ${config_value})"

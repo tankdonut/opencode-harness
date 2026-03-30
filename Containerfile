@@ -97,7 +97,7 @@ COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Environment configuration
 ENV PATH="/vendor/bin:${PATH}" \
-    OPENCODE_CONFIG="/workspace/.config/opencode/opencode.json" \
+    OPENCODE_CONFIG="/opencode/default/opencode.json" \
     OPENCODE_THEME="ayu-dark" \
     OPENCODE_VERSION="${OPENCODE_VERSION}"
 

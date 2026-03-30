@@ -10,12 +10,12 @@ set -euo pipefail
 # Configuration
 readonly OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat /etc/opencode-version 2>/dev/null | tr -d '[:space:]')}"
 readonly OPENCODE_THEME="${OPENCODE_THEME:-ayu-dark}"
-readonly CONFIG_PATH="${OPENCODE_CONFIG:-/workspace/.config/opencode/opencode.json}"
+readonly CONFIG_PATH="${OPENCODE_CONFIG:-/opencode/default/opencode.json}"
 readonly MODULES_PATH="/vendor/modules"
 readonly VENDOR_BIN="/vendor/bin"
-readonly DEFAULT_CONFIG_SOURCE="${DEFAULT_CONFIG_SOURCE:-/opencode/default/opencode.json}"
-readonly DEFAULT_TUI_SOURCE="${DEFAULT_TUI_SOURCE:-/opencode/default/tui.json}"
-readonly DEFAULT_THEMES_SOURCE="${DEFAULT_THEMES_SOURCE:-/opencode/default/themes}"
+readonly DEFAULT_CONFIG_SOURCE="/opencode/default/opencode.json"
+readonly DEFAULT_TUI_SOURCE="/opencode/default/tui.json"
+readonly DEFAULT_THEMES_SOURCE="/opencode/default/themes"
 
 # Oh-My-OpenCode (OMO) Configuration
 # OMO_ENABLED: Enable oh-my-opencode installation (set to any value to enable)
@@ -61,8 +61,8 @@ command_exists() {
 # Bootstrap Helper Functions
 # =============================================================================
 
-# Derive config directory from OPENCODE_CONFIG path
-# Given "/workspace/.config/opencode/opencode.json", returns "/workspace/.config/opencode"
+# Derive config directory from CONFIG_PATH
+# Given "/opencode/default/opencode.json", returns "/opencode/default"
 derive_config_dir() {
     local config_path="${1:-$CONFIG_PATH}"
 
