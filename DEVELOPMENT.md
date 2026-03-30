@@ -229,22 +229,24 @@ git commit -m "chore: update <plugin-name>"
 
 ## Container Build Options
 
-### Build with Specific OpenCode Version
+### Build with OpenCode Version
 
-The container image is tagged with the OpenCode version for traceability. Build with a specific version:
+The OpenCode version is managed in `.opencode-version` (single source of truth). Build reads the version from this file:
 
 ```bash
-# Build with specific OpenCode version
-podman build --build-arg OPENCODE_VERSION=1.2.27 -t opencode-harness:1.2.27 -f Containerfile .
+# Build using version from .opencode-version
+podman build --build-arg OPENCODE_VERSION=$(cat .opencode-version) -t opencode-harness -f Containerfile .
 
 # Or with Docker
-docker build --build-arg OPENCODE_VERSION=1.2.27 -t opencode-harness:1.2.27 -f Containerfile .
+docker build --build-arg OPENCODE_VERSION=$(cat .opencode-version) -t opencode-harness -f Containerfile .
 ```
 
-**Available tags after build:**
+To change the OpenCode version, update `.opencode-version` and rebuild:
 
-- `opencode-harness:1.2.27` - version-specific tag
-- `opencode-harness:latest` - default tag
+```bash
+echo "1.4.0" > .opencode-version
+podman build --build-arg OPENCODE_VERSION=$(cat .opencode-version) -t opencode-harness -f Containerfile .
+```
 
 ## Security Considerations
 
