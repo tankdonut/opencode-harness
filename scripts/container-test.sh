@@ -218,7 +218,7 @@ test_modules() {
     log_section "Testing Modules Directory"
 
     # Check if modules directory exists
-    if ! ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -d /workspace/modules; then
+    if ! ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -d /vendor/modules; then
         log_skip "Modules directory not found (submodules may not be included)"
         return
     fi
@@ -230,7 +230,7 @@ test_modules() {
     local found_count=0
 
     for module in "${expected_modules[@]}"; do
-        if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -d "/workspace/modules/${module}"; then
+        if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -d "/vendor/modules/${module}"; then
             log_pass "Module found: ${module}"
             ((found_count++)) || true
         else

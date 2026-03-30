@@ -92,7 +92,7 @@ COPY --chown=opencode:opencode .opencode/opencode.json /opencode/default/opencod
 COPY --chown=opencode:opencode .opencode/tui.json /opencode/default/tui.json
 COPY --chown=opencode:opencode .opencode/themes/ /opencode/default/themes/
 COPY --chown=opencode:opencode etc/opencode/opencode.jsonc /etc/opencode/opencode.jsonc
-COPY --chown=opencode:opencode modules/ /workspace/modules/
+COPY --chown=opencode:opencode modules/ /vendor/modules/
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Environment configuration

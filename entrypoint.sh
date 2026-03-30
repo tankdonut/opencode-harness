@@ -11,7 +11,7 @@ set -euo pipefail
 readonly OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat /etc/opencode-version 2>/dev/null | tr -d '[:space:]')}"
 readonly OPENCODE_THEME="${OPENCODE_THEME:-ayu-dark}"
 readonly CONFIG_PATH="${OPENCODE_CONFIG:-/workspace/.config/opencode/opencode.json}"
-readonly MODULES_PATH="/workspace/modules"
+readonly MODULES_PATH="/vendor/modules"
 readonly VENDOR_BIN="/vendor/bin"
 readonly DEFAULT_CONFIG_SOURCE="${DEFAULT_CONFIG_SOURCE:-/opencode/default/opencode.json}"
 readonly DEFAULT_TUI_SOURCE="${DEFAULT_TUI_SOURCE:-/opencode/default/tui.json}"
