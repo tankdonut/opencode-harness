@@ -111,7 +111,7 @@ validate_permissions() {
     log_section "Validating File Permissions"
 
     local executable_scripts=(
-        "${PROJECT_ROOT}/setup.sh"
+        "${PROJECT_ROOT}/scripts/local-setup.sh"
         "${PROJECT_ROOT}/entrypoint.sh"
     )
 
@@ -231,7 +231,7 @@ validate_structure() {
         "Containerfile"
         ".opencode/opencode.json"
         "etc/opencode/opencode.jsonc"
-        "setup.sh"
+        "scripts/local-setup.sh"
         "entrypoint.sh"
         "README.md"
         "AGENTS.md"

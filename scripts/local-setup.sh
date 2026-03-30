@@ -4,8 +4,9 @@ set -euo pipefail
 
 # shellcheck disable=SC2155
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat "${SCRIPT_DIR}/.opencode-version" 2>/dev/null | tr -d '[:space:]')}"
-readonly CONFIG_PATH="${SCRIPT_DIR}/.opencode/opencode.json"
+readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+readonly OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat "${PROJECT_ROOT}/.opencode-version" 2>/dev/null | tr -d '[:space:]')}"
+readonly CONFIG_PATH="${PROJECT_ROOT}/.opencode/opencode.json"
 
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
@@ -84,7 +85,7 @@ check_prerequisites() {
 init_submodules() {
     log "Initializing git submodules..."
     
-    cd "$SCRIPT_DIR"
+    cd "$PROJECT_ROOT"
     
     if [[ ! -f ".gitmodules" ]]; then
         log_warn "No .gitmodules file found, skipping submodule initialization"
