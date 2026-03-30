@@ -129,7 +129,7 @@ git submodule update --init --recursive
 **Solution**: Verify base image is accessible:
 
 ```bash
-podman pull ghcr.io/tankdonut/tools:latest
+podman pull ghcr.io/tankdonut/tools@sha256:0f2115e5cfaa7cced5e26c4398a5d5ed667bbe2baf892a6947ab03166428b286
 ```
 
 ### OpenCode Config Not Found

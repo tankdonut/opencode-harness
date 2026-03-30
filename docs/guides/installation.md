@@ -181,7 +181,7 @@ git submodule update --init --recursive
 
 ```bash
 # Check base images are accessible
-podman pull ghcr.io/tankdonut/tools:latest
+podman pull ghcr.io/tankdonut/tools@sha256:0f2115e5cfaa7cced5e26c4398a5d5ed667bbe2baf892a6947ab03166428b286
 ```
 
 ### JSON Validation Errors

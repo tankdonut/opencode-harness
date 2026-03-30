@@ -15,6 +15,7 @@ The harness automates configuration, provides containerized environments, and st
 ```text
 opencode-harness/
 ├── .github/                    # GitHub configuration
+│   ├── dependabot.yml          # Automated dependency updates
 │   └── workflows/              # CI/CD workflows
 │       └── ci.yml              # Main CI pipeline
 ├── .opencode/                   # OpenCode configuration
@@ -46,7 +47,7 @@ opencode-harness/
 ## Tech Stack
 
 - **Container Runtime**: Podman/Docker
-- **Base Image**: Ubuntu 24.04
+- **Base Image**: Ubuntu 25.10
 - **OpenCode**: v1.0+
 - **Shell**: Bash
 - **Git**: Submodules for plugin management
@@ -188,7 +189,7 @@ install() {
 
 ```dockerfile
 # ✅ Good - multi-stage, explicit versions, clear comments
-FROM ghcr.io/tankdonut/tools:latest AS tools
+FROM ghcr.io/tankdonut/tools@sha256:0f2115e5cfaa7cced5e26c4398a5d5ed667bbe2baf892a6947ab03166428b286 AS tools
 
 FROM docker.io/library/ubuntu:25.10
 
@@ -382,7 +383,7 @@ git submodule update --init --recursive
 ```bash
 # Symptom: COPY --from=tools fails
 # Solution: Verify base image exists
-podman pull ghcr.io/tankdonut/tools:latest
+podman pull ghcr.io/tankdonut/tools@sha256:0f2115e5cfaa7cced5e26c4398a5d5ed667bbe2baf892a6947ab03166428b286
 ```
 
 ### OpenCode Doesn't See Plugins
