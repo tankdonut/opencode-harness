@@ -138,10 +138,10 @@ git clone --recurse-submodules https://github.com/tankdonut/opencode-harness.git
 cd opencode-harness
 
 # Build container image
-podman build -t opencode-harness -f Containerfile .
+./scripts/build.sh
 
-# Or with Docker
-docker build -t opencode-harness -f Containerfile .
+# Or explicitly with Docker
+./scripts/build.sh --runtime docker
 
 # Test the build
 podman run -it --rm opencode-harness bash -c "opencode --version && echo 'Success!'"
@@ -213,7 +213,7 @@ cd opencode-harness
 ./scripts/validate.sh
 
 # Build and test container
-podman build --no-cache -t opencode-harness-dev -f Containerfile .
+./scripts/build.sh --no-cache --tag opencode-harness-dev
 ./scripts/container-test.sh opencode-harness-dev
 
 # Run security scan
@@ -310,7 +310,7 @@ git submodule status
 ./scripts/validate.sh
 
 # Test container functionality
-podman build -t test-harness -f Containerfile .
+./scripts/build.sh --tag test-harness
 ./scripts/container-test.sh test-harness
 
 # Verify plugin functionality
@@ -338,7 +338,7 @@ df -h
 podman system prune -a
 
 # Rebuild with no cache
-podman build --no-cache -t opencode-harness -f Containerfile .
+./scripts/build.sh --no-cache
 ```
 
 **OpenCode version conflicts:**

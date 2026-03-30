@@ -65,7 +65,7 @@ cd opencode-harness
 git submodule update --init --recursive
 
 # Build container
-podman build -t opencode-harness -f Containerfile .
+./scripts/build.sh
 
 # Test container
 podman run -it --rm opencode-harness bash -c "opencode --version && echo 'Success!'"
@@ -163,7 +163,7 @@ USER opencode
 ./scripts/validate.sh
 
 # Test container build
-podman build --no-cache -t test -f Containerfile .
+./scripts/build.sh --no-cache --tag test
 
 # Run test suite
 ./scripts/container-test.sh test
@@ -202,7 +202,7 @@ chown -R 1000:1000 /path/to/workspace
 ```bash
 # Full validation workflow
 ./scripts/validate.sh
-podman build --no-cache -t opencode-harness-test -f Containerfile .
+./scripts/build.sh --no-cache --tag opencode-harness-test
 ./scripts/container-test.sh opencode-harness-test
 podman image scan opencode-harness-test
 ```

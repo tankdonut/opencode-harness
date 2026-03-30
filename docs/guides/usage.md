@@ -212,7 +212,7 @@ git add modules/everything-claude-code
 git commit -m "update: everything-claude-code plugin"
 
 # Container rebuild needed after plugin updates
-podman build -t opencode-harness -f Containerfile .
+./scripts/build.sh
 ```
 
 ### Plugin Configuration
@@ -247,7 +247,7 @@ git submodule add https://github.com/example/opencode-plugin.git modules/my-plug
 jq '.plugin += ["my-plugin"]' opencode.json > tmp.json && mv tmp.json opencode.json
 
 # Rebuild container if using container deployment
-podman build -t opencode-harness -f Containerfile .
+./scripts/build.sh
 ```
 
 ## Advanced Usage
@@ -353,10 +353,9 @@ podman run -it --rm \
 
 ```bash
 # Build with cache optimization
-podman build \
+./scripts/build.sh \
   --cache-from ghcr.io/tankdonut/opencode-harness:latest \
-  -t opencode-harness \
-  -f Containerfile .
+  --tag opencode-harness
 ```
 
 **Plugin caching:**
@@ -390,8 +389,8 @@ podman build \
    git pull origin main
    git submodule update --remote --recursive
 
-   # Rebuild container
-   podman build -t opencode-harness -f Containerfile .
+    # Rebuild container
+    ./scripts/build.sh
    ```
 
 2. **Cleanup:**
