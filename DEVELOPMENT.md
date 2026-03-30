@@ -57,7 +57,7 @@ Run validation and container tests locally before pushing:
 
 # Or manually
 jq . opencode.json
-shellcheck setup.sh entrypoint.sh scripts/*.sh
+shellcheck entrypoint.sh scripts/*.sh
 ```
 
 ## Git Workflow
@@ -165,7 +165,7 @@ jq . opencode.json
 ## Setup Script Options
 
 ```bash
-./setup.sh [OPTIONS]
+./scripts/local-setup.sh [OPTIONS]
 
 OPTIONS:
     --skip-submodules    Skip git submodule initialization
@@ -175,9 +175,9 @@ OPTIONS:
     -h, --help           Show help message
 
 EXAMPLES:
-    ./setup.sh                       # Full setup
-    ./setup.sh --skip-install        # Setup without installing OpenCode
-    ./setup.sh --version 2.0.0       # Install specific version
+    ./scripts/local-setup.sh                       # Full setup
+    ./scripts/local-setup.sh --skip-install        # Setup without installing OpenCode
+    ./scripts/local-setup.sh --version 2.0.0       # Install specific version
 ```
 
 ## Plugin Management

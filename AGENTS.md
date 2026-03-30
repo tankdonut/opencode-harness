@@ -32,11 +32,12 @@ opencode-harness/
 │   └── opencode/               # OpenCode system config
 │       └── opencode.jsonc      # Container-specific OpenCode config
 ├── scripts/                    # Automation scripts
+│   ├── build.sh                # Container build script
 │   ├── container-test.sh       # Container verification tests
+│   ├── local-setup.sh          # Host bootstrap script
 │   └── validate.sh             # Pre-build validation
 ├── Containerfile               # Main container definition
 ├── entrypoint.sh               # Container entrypoint
-├── setup.sh                    # Host bootstrap script
 ├── .gitignore                  # Git exclusions
 ├── AGENTS.md                   # This file
 └── README.md                   # Project documentation
@@ -59,7 +60,7 @@ opencode-harness/
 git submodule update --init --recursive
 
 # Bootstrap OpenCode on host
-./setup.sh
+./scripts/local-setup.sh
 
 # Build container image
 ./scripts/build.sh
@@ -360,7 +361,7 @@ podman run -it --rm \
     opencode-harness-test bash -c "cd /workspace && pwd && ls -la"
 
 # 6. Test host setup (in clean environment if possible)
-./setup.sh --dry-run  # If dry-run flag exists
+./scripts/local-setup.sh --dry-run  # If dry-run flag exists
 
 # 7. Scan for vulnerabilities
 podman image scan opencode-harness-test
