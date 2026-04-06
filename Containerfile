@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.4
+# syntax=docker/dockerfile:1
 
 # ============================================
 # OpenCode Harness Container Image
@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN npm install -g bun
 
 # Copy vendor binaries from tools stage
-COPY --from=tools /dist/ /vendor/bin/
+COPY --exclude=opencode --from=tools /dist/ /vendor/bin/
 
 # Copy version file (single source of truth for OpenCode version)
 COPY .opencode-version /etc/opencode-version
