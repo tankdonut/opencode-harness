@@ -90,12 +90,8 @@ RUN useradd -m -d /workspace -u 1001 -s /bin/bash opencode || useradd -m -d /wor
 WORKDIR /workspace
 
 # Copy configuration files
-COPY --chown=opencode:opencode .opencode/opencode.json /opencode/default/opencode.json
-COPY --chown=opencode:opencode .opencode/tui.json /opencode/default/tui.json
-COPY --chown=opencode:opencode .opencode/themes/ /opencode/default/themes/
-COPY --chown=opencode:opencode etc/opencode/opencode.jsonc /etc/opencode/opencode.jsonc
-COPY etc/npmrc /etc/npmrc
-COPY etc/uv/uv.toml /etc/uv/uv.toml
+COPY --chown=opencode:opencode .opencode/ /opencode/default/
+COPY etc/ /etc/
 COPY --chown=opencode:opencode modules/ /vendor/modules/
 COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
