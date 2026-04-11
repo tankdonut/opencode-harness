@@ -39,7 +39,6 @@ Build the OpenCode Harness container image.
 
 Options:
     -t, --tag TAG         Image tag (default: opencode-harness)
-    -v, --version VER     OpenCode version (default: reads from .opencode-version)
     -r, --runtime RT      Container runtime: podman or docker (default: auto-detect)
         --no-cache        Build without cache
         --load            Load image into local registry after build (for multi-stage)
@@ -51,7 +50,6 @@ Examples:
     $(basename "${BASH_SOURCE[0]}")
     $(basename "${BASH_SOURCE[0]}") --tag my-harness:v1
     $(basename "${BASH_SOURCE[0]}") --runtime docker --no-cache
-    $(basename "${BASH_SOURCE[0]}") --version 1.3.3
 EOF
 }
 
@@ -68,7 +66,6 @@ detect_runtime() {
 
 parse_args() {
     TAG="opencode-harness"
-    OPENCODE_VERSION=""
     RUNTIME=""
     NO_CACHE=false
     PASSTHROUGH_ARGS=()
@@ -87,14 +84,6 @@ parse_args() {
                 TAG="${2:-}"
                 if [[ -z "$TAG" ]]; then
                     log_error "--tag requires a value"
-                    exit 1
-                fi
-                shift 2
-                ;;
-            -v|--version)
-                OPENCODE_VERSION="${2:-}"
-                if [[ -z "$OPENCODE_VERSION" ]]; then
-                    log_error "--version requires a value"
                     exit 1
                 fi
                 shift 2
@@ -130,19 +119,6 @@ parse_args() {
     RUNTIME="${RUNTIME:-$(detect_runtime)}"
 }
 
-resolve_version() {
-    if [[ -n "$OPENCODE_VERSION" ]]; then
-        return
-    fi
-
-    if [[ -f "$VERSION_FILE" ]]; then
-        OPENCODE_VERSION=$(cat "$VERSION_FILE" | tr -d '[:space:]')
-        log "Using version from .opencode-version: ${OPENCODE_VERSION}"
-    else
-        log_warn "No .opencode-version file found, version will be resolved at build time"
-    fi
-}
-
 validate_inputs() {
     if [[ ! -f "$CONTAINERFILE" ]]; then
         log_error "Containerfile not found at ${CONTAINERFILE}"
@@ -160,10 +136,6 @@ run_build() {
 
     build_cmd+=("-f" "${CONTAINERFILE}")
 
-    if [[ -n "$OPENCODE_VERSION" ]]; then
-        build_cmd+=("--build-arg" "OPENCODE_VERSION=${OPENCODE_VERSION}")
-    fi
-
     if [[ "$NO_CACHE" == true ]]; then
         build_cmd+=("--no-cache")
     fi
@@ -180,15 +152,14 @@ run_build() {
     log "Building image: ${TAG}"
     log "Runtime: ${RUNTIME}"
     log "Context: ${PROJECT_ROOT}"
-    if [[ -n "$OPENCODE_VERSION" ]]; then
-        log "OpenCode version: ${OPENCODE_VERSION}"
-    fi
     log "Command: ${build_cmd[*]}"
     echo ""
 
     if "${build_cmd[@]}"; then
         echo ""
         log_success "Image built: ${TAG}"
+
+        apply_labels
 
         local image_size
         image_size=$("${RUNTIME}" images "${TAG}" --format "{{.Size}}" 2>/dev/null | head -1 || echo "unknown")
@@ -199,9 +170,33 @@ run_build() {
     fi
 }
 
+apply_labels() {
+    if [[ ! -f "$VERSION_FILE" ]]; then
+        log_warn "No .opencode-version file found, skipping label application"
+        return
+    fi
+
+    local opencode_version
+    opencode_version=$(cat "$VERSION_FILE" | tr -d '[:space:]')
+
+    log "Applying image labels..."
+
+    "${RUNTIME}" inspect --type image "${TAG}" &>/dev/null || return
+
+    local label_cmd=("${RUNTIME}" "image" "label")
+    label_cmd+=("org.opencontainers.image.title=OpenCode Harness" "${TAG}")
+    "${label_cmd[@]}" 2>/dev/null || true
+
+    "${RUNTIME}" image label "org.opencontainers.image.description=Containerized OpenCode environment with production-ready agents and skills" "${TAG}" 2>/dev/null || true
+    "${RUNTIME}" image label "org.opencontainers.image.version=${opencode_version}" "${TAG}" 2>/dev/null || true
+    "${RUNTIME}" image label "org.opencontainers.image.source=https://github.com/tankdonut/opencode-harness" "${TAG}" 2>/dev/null || true
+    "${RUNTIME}" image label "opencode.version=${opencode_version}" "${TAG}" 2>/dev/null || true
+
+    log_success "Labels applied (version: ${opencode_version})"
+}
+
 main() {
     parse_args "$@"
-    resolve_version
     validate_inputs
     run_build
 }

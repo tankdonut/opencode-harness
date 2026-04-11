@@ -3,11 +3,12 @@
 # ============================================
 # OpenCode Harness Container Image
 # ============================================
-# Build reads version from .opencode-version:
-#   ./scripts/build.sh
+# Version is read from .opencode-version at build time.
+# Build: ./scripts/build.sh
 # Or with explicit options:
 #   ./scripts/build.sh --tag my-tag --runtime docker --no-cache
 #
+# Labels are applied post-build via scripts/build.sh
 # Image tags include OpenCode version for traceability:
 #   opencode-harness:latest  - current default
 # ============================================
@@ -18,7 +19,6 @@ FROM docker.io/library/ubuntu:25.10
 
 # Build arguments
 ARG DEBIAN_FRONTEND=noninteractive
-ARG OPENCODE_VERSION
 ARG TARGETARCH=amd64
 ARG TARGETVARIANT=
 
@@ -47,11 +47,10 @@ COPY --exclude=opencode --from=tools /dist/ /vendor/bin/
 COPY .opencode-version /etc/opencode-version
 
 # Download and install OpenCode from GitHub releases
-# Version resolved from --build-arg or /etc/opencode-version
+# Version read from /etc/opencode-version (single source of truth)
 # This happens at build time for reproducibility
 RUN set -eux; \
-    # Resolve version from build-arg or version file \
-    OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat /etc/opencode-version | tr -d '[:space:]')}"; \
+    OPENCODE_VERSION="$(cat /etc/opencode-version | tr -d '[:space:]')"; \
     \
     # Determine architecture mapping \
     case "$(uname -m)" in \
@@ -98,15 +97,7 @@ COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 # Environment configuration
 ENV PATH="/vendor/bin:${PATH}" \
     OPENCODE_CONFIG="/opencode/default/opencode.json" \
-    OPENCODE_THEME="ayu-dark" \
-    OPENCODE_VERSION="${OPENCODE_VERSION}"
-
-# Add labels for image metadata
-LABEL org.opencontainers.image.title="OpenCode Harness" \
-    org.opencontainers.image.description="Containerized OpenCode environment with production-ready agents and skills" \
-    org.opencontainers.image.version="${OPENCODE_VERSION}" \
-    org.opencontainers.image.source="https://github.com/tankdonut/opencode-harness" \
-    opencode.version="${OPENCODE_VERSION}"
+    OPENCODE_THEME="ayu-dark"
 
 USER opencode
 
