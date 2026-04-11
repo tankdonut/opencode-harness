@@ -101,7 +101,9 @@ COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 # Environment configuration
 ENV PATH="/vendor/bin:${PATH}" \
     OPENCODE_CONFIG="/opencode/default/opencode.json" \
-    OPENCODE_THEME="ayu-dark"
+    OPENCODE_THEME="ayu-dark" \
+    OMO_SEND_ANONYMOUS_TELEMETRY=0 \
+    OMO_DISABLE_POSTHOG=1
 
 USER opencode
 
