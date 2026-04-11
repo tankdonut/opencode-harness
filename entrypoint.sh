@@ -8,7 +8,8 @@
 set -euo pipefail
 
 # Configuration
-readonly OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat /etc/opencode-version 2>/dev/null | tr -d '[:space:]')}"
+OPENCODE_VERSION="$(cat /etc/opencode-version 2>/dev/null | tr -d '[:space:]')"
+readonly OPENCODE_VERSION
 readonly OPENCODE_THEME="${OPENCODE_THEME:-ayu-dark}"
 readonly CONFIG_PATH="${OPENCODE_CONFIG:-/opencode/default/opencode.json}"
 readonly MODULES_PATH="/vendor/modules"
