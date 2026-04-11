@@ -4,6 +4,7 @@ set -euo pipefail
 
 # shellcheck disable=SC2155
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC2155
 readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 readonly OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat "${PROJECT_ROOT}/.opencode-version" 2>/dev/null | tr -d '[:space:]')}"
 readonly CONFIG_PATH="${PROJECT_ROOT}/.opencode/opencode.json"
@@ -40,16 +41,16 @@ command_exists() {
 
 check_prerequisites() {
     log "Checking prerequisites..."
-    
+
     local required_cmds=("git" "node" "npm" "curl" "jq")
     local missing_cmds=()
-    
+
     for cmd in "${required_cmds[@]}"; do
         if ! command_exists "$cmd"; then
             missing_cmds+=("$cmd")
         fi
     done
-    
+
     if [[ ${#missing_cmds[@]} -gt 0 ]]; then
         log_error "Missing required commands: ${missing_cmds[*]}"
         log_info "Please install the following:"
@@ -71,9 +72,9 @@ check_prerequisites() {
         done
         return 1
     fi
-    
+
     log_success "All required prerequisites found"
-    
+
     log_info "Detected versions:"
     log_info "  - Git: $(git --version | head -n1)"
     log_info "  - Node: $(node --version)"
@@ -84,20 +85,20 @@ check_prerequisites() {
 
 init_submodules() {
     log "Initializing git submodules..."
-    
+
     cd "$PROJECT_ROOT"
-    
+
     if [[ ! -f ".gitmodules" ]]; then
         log_warn "No .gitmodules file found, skipping submodule initialization"
         return 0
     fi
-    
+
     git submodule update --init --recursive
-    
+
     local submodule_count
     submodule_count=$(git submodule status | wc -l)
     log_success "Initialized ${submodule_count} git submodules"
-    
+
     if [[ -d "modules" ]]; then
         log_info "Available plugins:"
         for module in modules/*/; do
@@ -112,21 +113,21 @@ init_submodules() {
 
 validate_config() {
     log "Validating OpenCode configuration..."
-    
+
     if [[ ! -f "$CONFIG_PATH" ]]; then
         log_error "Config file not found at $CONFIG_PATH"
         return 1
     fi
-    
+
     if ! jq empty "$CONFIG_PATH" 2>/dev/null; then
         log_error "Invalid JSON syntax in $CONFIG_PATH"
         return 1
     fi
-    
+
     local plugin_count
     plugin_count=$(jq '.plugin | length' "$CONFIG_PATH" 2>/dev/null || echo "0")
     log_success "Configuration valid - ${plugin_count} plugins configured"
-    
+
     log_info "Configured plugins:"
     jq -r '.plugin[]' "$CONFIG_PATH" 2>/dev/null | while read -r plugin; do
         log_info "  - ${plugin}"
@@ -135,12 +136,12 @@ validate_config() {
 
 install_opencode() {
     log "Installing OpenCode..."
-    
+
     if command_exists opencode; then
         local installed_version
         installed_version=$(opencode --version 2>/dev/null | head -n1 || echo "unknown")
         log_warn "OpenCode already installed (${installed_version})"
-        
+
         read -p "Reinstall OpenCode ${OPENCODE_VERSION}? [y/N]: " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -148,23 +149,23 @@ install_opencode() {
             return 0
         fi
     fi
-    
+
     npm install -g "opencode@${OPENCODE_VERSION}"
-    
+
     if ! command_exists opencode; then
         log_error "OpenCode installation failed"
         return 1
     fi
-    
+
     log_success "OpenCode ${OPENCODE_VERSION} installed successfully"
 }
 
 setup_opencode_config() {
     log "Setting up OpenCode configuration..."
-    
+
     local opencode_dir="${HOME}/.opencode"
     mkdir -p "$opencode_dir"
-    
+
     if [[ -f "${opencode_dir}/config.json" ]]; then
         log_warn "OpenCode config already exists at ${opencode_dir}/config.json"
         log_info "Current harness config: ${CONFIG_PATH}"
@@ -178,12 +179,12 @@ setup_opencode_config() {
 
 verify_installation() {
     log "Verifying installation..."
-    
+
     if ! opencode --version &>/dev/null; then
         log_error "OpenCode command not working"
         return 1
     fi
-    
+
     log_success "Installation verified"
     log_info "OpenCode version: $(opencode --version | head -n1)"
 }
@@ -236,7 +237,7 @@ main() {
     local skip_submodules=false
     local skip_install=false
     local skip_config=false
-    
+
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --skip-submodules)
@@ -266,36 +267,36 @@ main() {
                 ;;
         esac
     done
-    
+
     log "Starting OpenCode Harness setup..."
     echo ""
-    
+
     check_prerequisites || exit 1
-    
+
     if [[ "$skip_submodules" == false ]]; then
         init_submodules || exit 1
     else
         log_info "Skipping submodule initialization (--skip-submodules)"
     fi
-    
+
     validate_config || exit 1
-    
+
     if [[ "$skip_install" == false ]]; then
         install_opencode || exit 1
     else
         log_info "Skipping OpenCode installation (--skip-install)"
     fi
-    
+
     if [[ "$skip_config" == false ]]; then
         setup_opencode_config || true
     else
         log_info "Skipping OpenCode config setup (--skip-config)"
     fi
-    
+
     verify_installation || exit 1
-    
+
     print_summary
-    
+
     log_success "Setup completed successfully!"
 }
 

@@ -22,7 +22,10 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG TARGETARCH=amd64
 ARG TARGETVARIANT=
 
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
 # Install runtime dependencies
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -38,6 +41,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install bun runtime for oh-my-opencode
 # Using npm to install bun globally (cleaner than curl|bash in container)
+# hadolint ignore=DL3016
 RUN npm install -g bun
 
 # Copy vendor binaries from tools stage

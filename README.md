@@ -17,7 +17,7 @@ OpenCode Harness bundles three powerful OpenCode plugin ecosystems as git submod
 This harness provides:
 
 - **Bootstrap automation** - Setup scripts and containerized environments
-- **Plugin ecosystem** - Pre-wired access to 3 major OpenCode plugin collections  
+- **Plugin ecosystem** - Pre-wired access to 3 major OpenCode plugin collections
 - **Agent-ready documentation** - Comprehensive guides designed for AI assistants
 - **Git submodule management** - Easy plugin updates and version control
 

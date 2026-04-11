@@ -304,7 +304,7 @@ install_oh_my_opencode() {
     # Execute installation
     if ${install_cmd}; then
         log_success "Oh-My-OpenCode installed successfully"
-        
+
         # Verify config was created
         if [[ -f "$omo_config" ]]; then
             log "Config created at: ${omo_config}"
