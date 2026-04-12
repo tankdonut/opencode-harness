@@ -41,8 +41,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install bun runtime for oh-my-opencode
 # Using npm to install bun globally (cleaner than curl|bash in container)
-# hadolint ignore=DL3016
-RUN npm install -g bun
+RUN npm install -g bun@1.3.11
 
 # Copy vendor binaries from tools stage
 COPY --exclude=opencode --from=tools /dist/ /vendor/bin/
