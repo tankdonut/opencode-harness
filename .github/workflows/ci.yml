@@ -42,11 +42,8 @@ jobs:
           sudo apt-get install -y jq
           pip install pre-commit
 
-      - name: Validate JSON configuration
-        run: |
-          echo "Validating opencode.json..."
-          jq . opencode.json
-          echo "✓ JSON configuration is valid"
+      - name: Run validation suite
+        run: ./scripts/validate.sh
 
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
@@ -78,19 +75,10 @@ jobs:
 
       - name: Build container image
         run: |
-          chmod +x scripts/build.sh
           ./scripts/build.sh \
             --runtime docker \
             --no-cache \
             --tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-
-      - name: Apply image labels
-        run: |
-          docker image label "org.opencontainers.image.title=OpenCode Harness" ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
-          docker image label "org.opencontainers.image.description=Containerized OpenCode environment with production-ready agents and skills" ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
-          docker image label "org.opencontainers.image.version=${{ env.OPENCODE_VERSION }}" ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
-          docker image label "org.opencontainers.image.source=https://github.com/tankdonut/opencode-harness" ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
-          docker image label "opencode.version=${{ env.OPENCODE_VERSION }}" ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} || true
 
       - name: Tag image
         run: |
@@ -100,28 +88,7 @@ jobs:
 
       - name: Run container tests
         run: |
-          chmod +x scripts/container-test.sh
           ./scripts/container-test.sh ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.CONTAINER_CMD }}
-
-      - name: Test container runtime
-        run: |
-          echo "Testing container runtime..."
-          ${{ env.CONTAINER_CMD }} run --rm ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} bash -c "
-            set -e
-            echo 'Testing OpenCode installation...'
-            opencode --version || echo 'OpenCode version check'
-
-            echo 'Testing configuration...'
-            cat /app/opencode.json
-
-            echo 'Testing /etc/opencode/opencode.jsonc...'
-            test -f /etc/opencode/opencode.jsonc && echo '✓ opencode.jsonc found at /etc/opencode/'
-
-            echo 'Testing vendor binaries...'
-            ls -la /vendor/bin
-
-            echo '✓ Container runtime tests passed'
-          "
 
       - name: Scan image for vulnerabilities (optional)
         continue-on-error: true
