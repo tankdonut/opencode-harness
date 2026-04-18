@@ -205,10 +205,10 @@ The harness uses git submodules for plugin management:
 git submodule update --remote --recursive
 
 # Update specific plugin
-cd modules/everything-claude-code
+cd build/modules/everything-claude-code
 git pull origin main
-cd ../..
-git add modules/everything-claude-code
+cd ../../..
+git add build/modules/everything-claude-code
 git commit -m "update: everything-claude-code plugin"
 
 # Container rebuild needed after plugin updates
@@ -231,7 +231,7 @@ git commit -m "update: everything-claude-code plugin"
 }
 ```
 
-**Container-specific configuration:** `etc/opencode/opencode.jsonc`
+**Container-specific configuration:** `build/etc/opencode/opencode.jsonc`
 
 - Used for container-specific optimizations
 - Supports comments and trailing commas
@@ -241,7 +241,7 @@ git commit -m "update: everything-claude-code plugin"
 
 ```bash
 # Add new plugin as submodule
-git submodule add https://github.com/example/opencode-plugin.git modules/my-plugin
+git submodule add https://github.com/example/opencode-plugin.git build/modules/my-plugin
 
 # Update opencode.json
 jq '.plugin += ["my-plugin"]' opencode.json > tmp.json && mv tmp.json opencode.json

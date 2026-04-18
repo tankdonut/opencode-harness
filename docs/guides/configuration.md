@@ -28,11 +28,11 @@ The main configuration file defines which plugins to load and global OpenCode se
 }
 ```
 
-### Container Configuration: etc/opencode/opencode.jsonc
+### Container Configuration: build/etc/opencode/opencode.jsonc
 
 Container-specific configuration with extended features:
 
-**Location:** `etc/opencode/opencode.jsonc`
+**Location:** `build/etc/opencode/opencode.jsonc`
 **Format:** JSONC (supports comments and trailing commas)
 
 ```jsonc
@@ -502,7 +502,7 @@ jq . ~/.config/opencode/opencode.json > /dev/null && echo "✓ user config valid
 ls -la opencode.json
 ls -la .opencode/opencode.json*
 ls -la ~/.config/opencode/opencode.json*
-ls -la etc/opencode/opencode.jsonc
+ls -la build/etc/opencode/opencode.jsonc
 ```
 
 **Plugin loading failures:**
@@ -510,7 +510,7 @@ ls -la etc/opencode/opencode.jsonc
 ```bash
 # Verify plugin paths
 git submodule status
-ls -la modules/
+ls -la build/modules/
 
 # Check plugin configuration
 jq '.plugin[]' opencode.json

@@ -18,27 +18,30 @@ opencode-harness/
 │   ├── dependabot.yml          # Automated dependency updates
 │   └── workflows/              # CI/CD workflows
 │       └── ci.yml              # Main CI pipeline
-├── .opencode/                   # OpenCode configuration
-│   ├── opencode.json            # Plugin configuration
-│   ├── tui.json                 # TUI theme configuration
-│   └── themes/                  # Custom theme files
-│       ├── ayu-dark.json
-│       ├── lavi.json
-│       └── moonlight.json
-├── modules/                    # Git submodules (OpenCode plugins)
-│   ├── everything-claude-code/ # 16 agents, 65 skills, 40 commands
-│   ├── oh-my-openagent/       # Multi-agent system with Sisyphus orchestrator
-│   └── superpowers/           # Workflow skills (TDD, debugging, git)
-├── etc/                        # Configuration files
-│   └── opencode/               # OpenCode system config
-│       └── opencode.jsonc      # Container-specific OpenCode config
+├── build/                      # Container build context (all build files)
+│   ├── .containerignore        # Container build exclusions
+│   ├── .opencode-version       # Pinned OpenCode version
+│   ├── .opencode/              # OpenCode configuration
+│   │   ├── opencode.json       # Plugin configuration
+│   │   ├── tui.json            # TUI theme configuration
+│   │   └── themes/             # Custom theme files
+│   │       ├── ayu-dark.json
+│   │       ├── lavi.json
+│   │       └── moonlight.json
+│   ├── Containerfile           # Main container definition
+│   ├── entrypoint.sh           # Container entrypoint
+│   ├── etc/                    # Configuration files
+│   │   └── opencode/           # OpenCode system config
+│   │       └── opencode.jsonc  # Container-specific OpenCode config
+│   └── modules/                # Git submodules (OpenCode plugins)
+│       ├── everything-claude-code/ # 16 agents, 65 skills, 40 commands
+│       ├── oh-my-openagent/       # Multi-agent system with Sisyphus orchestrator
+│       └── superpowers/           # Workflow skills (TDD, debugging, git)
 ├── scripts/                    # Automation scripts
 │   ├── build.sh                # Container build script
 │   ├── container-test.sh       # Container verification tests
 │   ├── local-setup.sh          # Host bootstrap script
 │   └── validate.sh             # Pre-build validation
-├── Containerfile               # Main container definition
-├── entrypoint.sh               # Container entrypoint
 ├── .gitignore                  # Git exclusions
 ├── AGENTS.md                   # This file
 └── README.md                   # Project documentation
@@ -81,18 +84,18 @@ docker run -it --rm opencode-harness
 git submodule update --remote --recursive
 
 # Add new plugin submodule
-git submodule add <url> modules/<name>
+git submodule add <url> build/modules/<name>
 
 # Remove plugin submodule
-git submodule deinit -f modules/<name>
-git rm -f modules/<name>
+git submodule deinit -f build/modules/<name>
+git rm -f build/modules/<name>
 ```
 
 ### Verification
 
 ```bash
 # Verify OpenCode config
-cat .opencode/opencode.json
+cat build/.opencode/opencode.json
 
 # Check submodule status
 git submodule status
@@ -167,7 +170,7 @@ set -euo pipefail  # Fail on errors, undefined vars, pipe failures
 
 install_opencode_plugin() {
     local plugin_name="$1"
-    local plugin_path="modules/${plugin_name}"
+    local plugin_path="build/modules/${plugin_name}"
 
     if [[ ! -d "$plugin_path" ]]; then
         echo "Error: Plugin not found at $plugin_path" >&2
@@ -180,7 +183,7 @@ install_opencode_plugin() {
 
 # ❌ Bad - no error handling, unclear names
 install() {
-    cd modules/$1
+    cd build/modules/$1
     # What happens if directory doesn't exist?
 }
 ```
@@ -215,7 +218,7 @@ RUN apt-get install -y stuff
 COPY . .
 ```
 
-### OpenCode Configuration (.opencode/opencode.json)
+### OpenCode Configuration (build/.opencode/opencode.json)
 
 ```json
 {
@@ -232,7 +235,7 @@ COPY . .
 **Always validate JSON** before committing. Use `jq` to verify:
 
 ```bash
-jq . .opencode/opencode.json
+jq . build/.opencode/opencode.json
 ```
 
 ## Boundaries & Constraints
@@ -241,8 +244,8 @@ jq . .opencode/opencode.json
 
 - **Run `git submodule update --init --recursive`** after cloning or when submodules change
 - **Test container builds** before committing Containerfile changes
-- **Validate JSON** in .opencode/opencode.json with `jq` or equivalent
-- **Document new plugins** added to modules/ in README.md
+- **Validate JSON** in build/.opencode/opencode.json with `jq` or equivalent
+- **Document new plugins** added to build/modules/ in README.md
 - **Use `set -euo pipefail`** in all bash scripts
 - **Provide both Podman and Docker** commands (Podman preferred)
 - **Keep submodules at tagged releases** when possible (not random commits)
@@ -265,7 +268,7 @@ jq . .opencode/opencode.json
 
 - **Commit `.opencode/.cache/` or `.opencode/.sessions/`** - these are runtime artifacts
 - **Hardcode API keys or secrets** in any file
-- **Modify files inside `modules/` directories** - these are managed by upstream
+- **Modify files inside `build/modules/` directories** - these are managed by upstream
 - **Use `git submodule update --remote` without testing** - can break on upstream changes
 - **Remove error handling** from shell scripts (`set -euo pipefail`)
 - **Commit `node_modules/` or `vendor/` directories**
@@ -279,16 +282,16 @@ jq . .opencode/opencode.json
 ### Adding a New Plugin
 
 1. Research the plugin's OpenCode compatibility
-2. Add as submodule: `git submodule add <url> modules/<name>`
-3. Update `.opencode/opencode.json` to include the plugin
+2. Add as submodule: `git submodule add <url> build/modules/<name>`
+3. Update `build/.opencode/opencode.json` to include the plugin
 4. Update README.md with plugin description
 5. Test in container: `./scripts/build.sh --tag test --no-cache`
-6. Commit changes: `git add .gitmodules modules/ .opencode/opencode.json README.md && git commit -m "feat: add <name> plugin"`
+6. Commit changes: `git add .gitmodules build/modules/ build/.opencode/opencode.json README.md && git commit -m "feat: add <name> plugin"`
 
 ### Updating Container Bootstrap
 
-1. Edit `entrypoint.sh` with new setup steps
-2. Update `Containerfile` to call bootstrap script
+1. Edit `build/entrypoint.sh` with new setup steps
+2. Update `build/Containerfile` to call bootstrap script
 3. Build test: `./scripts/build.sh --tag test --no-cache`
 4. Run test: `podman run -it --rm test bash -c "opencode --version"`
 5. Verify OpenCode config is loaded correctly
@@ -306,10 +309,10 @@ git submodule sync     # Sync URL from .gitmodules
 git submodule update --init --recursive --force
 
 # Want to update submodule to latest?
-cd modules/<name>
+cd build/modules/<name>
 git pull origin main   # Or the default branch
 cd ../..
-git add modules/<name>
+git add build/modules/<name>
 git commit -m "chore: update <name> submodule"
 ```
 
@@ -328,7 +331,7 @@ Before committing container changes:
 
 - [ ] All base images use pinned tags (no `latest`)
 - [ ] Container runs as non-root user
-- [ ] No secrets in Containerfile, entrypoint.sh, or ENV vars
+- [ ] No secrets in build/Containerfile, build/entrypoint.sh, or ENV vars
 - [ ] Apt cache cleaned (`rm -rf /var/lib/apt/lists/*`)
 - [ ] Unnecessary packages removed
 - [ ] Vulnerability scan passed (`podman image scan`)
@@ -373,7 +376,7 @@ podman image scan opencode-harness-test
 ### Submodule Not Found
 
 ```bash
-# Symptom: modules/xyz is empty
+# Symptom: build/modules/xyz is empty
 # Solution:
 git submodule update --init --recursive
 ```
@@ -391,7 +394,7 @@ podman pull ghcr.io/tankdonut/tools@sha256:0f2115e5cfaa7cced5e26c4398a5d5ed667bb
 ```bash
 # Symptom: Plugins not loaded
 # Solution: Check opencode.json syntax
-jq . .opencode/opencode.json
+jq . build/.opencode/opencode.json
 # Verify plugin names match submodule directory names
 ```
 

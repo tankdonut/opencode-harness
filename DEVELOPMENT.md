@@ -57,7 +57,7 @@ Run validation and container tests locally before pushing:
 
 # Or manually
 jq . opencode.json
-shellcheck entrypoint.sh scripts/*.sh
+shellcheck build/entrypoint.sh scripts/*.sh
 ```
 
 ## Git Workflow
@@ -114,7 +114,7 @@ podman run -it --rm ghcr.io/tankdonut/opencode-harness:latest
 
 ### Submodules Not Initialized
 
-**Symptom**: `modules/` directories are empty
+**Symptom**: `build/modules/` directories are empty
 
 **Solution**:
 
@@ -187,7 +187,7 @@ EXAMPLES:
 1. Add plugin as git submodule:
 
    ```bash
-   git submodule add <plugin-url> modules/<plugin-name>
+   git submodule add <plugin-url> build/modules/<plugin-name>
    ```
 
 2. Update `opencode.json`:
@@ -213,17 +213,17 @@ Update all submodules to latest:
 
 ```bash
 git submodule update --remote --recursive
-git add modules/
+git add build/modules/
 git commit -m "chore: update plugin submodules"
 ```
 
 Update specific submodule:
 
 ```bash
-cd modules/<plugin-name>
+cd build/modules/<plugin-name>
 git pull origin main
-cd ../..
-git add modules/<plugin-name>
+cd ../../..
+git add build/modules/<plugin-name>
 git commit -m "chore: update <plugin-name>"
 ```
 
@@ -231,7 +231,7 @@ git commit -m "chore: update <plugin-name>"
 
 ### Build with OpenCode Version
 
-The OpenCode version is managed in `.opencode-version` (single source of truth). The build script reads the version from this file automatically:
+The OpenCode version is managed in `build/.opencode-version` (single source of truth). The build script reads the version from this file automatically:
 
 ```bash
 ./scripts/build.sh
@@ -244,10 +244,10 @@ To override the version or use Docker:
 ./scripts/build.sh --runtime docker
 ```
 
-To change the OpenCode version, update `.opencode-version` and rebuild:
+To change the OpenCode version, update `build/.opencode-version` and rebuild:
 
 ```bash
-echo "1.4.0" > .opencode-version
+echo "1.4.0" > build/.opencode-version
 ./scripts/build.sh
 ```
 

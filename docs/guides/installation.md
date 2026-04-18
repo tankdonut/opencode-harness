@@ -75,12 +75,17 @@ podman run -it --rm opencode-harness bash -c "opencode --version && echo 'Succes
 
 ```text
 opencode-harness/
-├── Containerfile              # Container build definition
+├── build/                     # Container build files
+│   ├── Containerfile          # Container build definition
+│   ├── entrypoint.sh          # Container entrypoint
+│   ├── .opencode-version      # OpenCode version pin
+│   ├── .opencode/             # OpenCode configuration
+│   ├── etc/                   # System config files
+│   └── modules/               # Git submodules
+│       ├── everything-claude-code/
+│       ├── oh-my-openagent/
+│       └── superpowers/
 ├── opencode.json              # Plugin configuration
-├── modules/                   # Git submodules
-│   ├── everything-claude-code/
-│   ├── oh-my-openagent/
-│   └── superpowers/
 ├── scripts/
 │   ├── local-setup.sh         # Host installation script
 │   ├── validate.sh            # Pre-build validation
@@ -106,7 +111,7 @@ opencode-harness/
 }
 ```
 
-**Container-specific config:** `etc/opencode/opencode.jsonc`
+**Container-specific config:** `build/etc/opencode/opencode.jsonc`
 
 ## Agent Instructions Context
 

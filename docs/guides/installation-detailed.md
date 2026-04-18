@@ -360,7 +360,7 @@ After successful installation:
 1. **Read the [Usage Guide](usage.md)** to understand how to work with OpenCode Harness
 2. **Review [Configuration Guide](configuration.md)** to customize your setup
 3. **Check [DEVELOPMENT.md](../../DEVELOPMENT.md)** for development workflows
-4. **Explore plugin documentation** in the `modules/` directory
+4. **Explore plugin documentation** in the `build/modules/` directory
 
 ## Getting Help
 
