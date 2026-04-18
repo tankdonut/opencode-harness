@@ -238,6 +238,28 @@ bootstrap_config() {
         done
     fi
 
+    # Sync config to workspace directory for runtime use
+    # Ensures /workspace/.config/opencode/opencode.json is managed by
+    # the bootstrap process, respecting OPENCODE_BOOTSTRAP_FORCE
+    local workspace_config_dir="/workspace/.config/opencode"
+    if [[ -d "/workspace" ]]; then
+        create_config_dir "$workspace_config_dir"
+        copy_config "$DEFAULT_CONFIG_SOURCE" "${workspace_config_dir}/opencode.json"
+        copy_theme_config "$workspace_config_dir"
+
+        if [[ -d "$MODULES_PATH" ]]; then
+            local module module_name
+            for module in "$MODULES_PATH"/*; do
+                if [[ -d "$module" ]]; then
+                    module_name=$(basename "$module")
+                    if is_module_enabled "$module_name"; then
+                        copy_assets "$module" "$workspace_config_dir"
+                    fi
+                fi
+            done
+        fi
+    fi
+
     log_success "Configuration bootstrap complete"
 }
 
