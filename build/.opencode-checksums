@@ -1,0 +1,6 @@
+# SHA256 checksums for OpenCode release tarballs
+# Format: <sha256>  <filename>
+# Update this file when changing .opencode-version
+# Checksums source: GitHub Releases API asset digests
+a4ea829ebe3d4afba52bbf039baf2546aa098c4e5411d5f19487d8ef9bd9f68c  opencode-linux-x64.tar.gz
+439d6b55945de9c359a934dc896d52f46c66b61758177345b35d4710b40506eb  opencode-linux-arm64.tar.gz

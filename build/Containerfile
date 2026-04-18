@@ -46,8 +46,9 @@ RUN npm install -g bun@1.3.11
 # Copy vendor binaries from tools stage
 COPY --exclude=opencode --from=tools /dist/ /vendor/bin/
 
-# Copy version file (single source of truth for OpenCode version)
+# Copy version and checksum files (single source of truth for OpenCode installation)
 COPY .opencode-version /etc/opencode-version
+COPY .opencode-checksums /etc/opencode-checksums
 
 # Download and install OpenCode from GitHub releases
 # Version read from /etc/opencode-version (single source of truth)
@@ -73,6 +74,16 @@ RUN set -eux; \
     echo "ERROR: Failed to download OpenCode from ${OPENCODE_RELEASE_URL}"; \
     exit 1; \
     fi; \
+    \
+    # Verify SHA256 checksum against pinned checksums \
+    OPENCODE_TARBALL="opencode-linux-${OPENCODE_ARCH}.tar.gz"; \
+    OPENCODE_EXPECTED="$(grep -E "  ${OPENCODE_TARBALL}$" /etc/opencode-checksums | head -1 | awk '{print $1}')"; \
+    if [ -z "${OPENCODE_EXPECTED}" ]; then \
+    echo "ERROR: No checksum entry for ${OPENCODE_TARBALL} in checksums file"; \
+    exit 1; \
+    fi; \
+    echo "Verifying SHA256 checksum for ${OPENCODE_TARBALL}..."; \
+    echo "${OPENCODE_EXPECTED}  /tmp/opencode.tar.gz" | sha256sum -c -; \
     \
     # Extract to vendor bin \
     tar -xzf /tmp/opencode.tar.gz -C /vendor/bin; \

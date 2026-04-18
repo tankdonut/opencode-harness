@@ -196,6 +196,8 @@ validate_containerfile() {
     local checks=(
         "FROM.*ubuntu:25.10:Base image uses pinned version"
         "FROM.*@sha256:.*AS tools:Builder image uses SHA digest"
+        "COPY.*\.opencode-checksums:Copies checksums file for verification"
+        "sha256sum -c:Verifies SHA256 checksum of downloaded tarball"
         "USER opencode:Runs as non-root user"
         "rm -rf /var/lib/apt/lists/\*:Cleans apt cache"
         "set -euo pipefail:Error handling in scripts"
@@ -224,6 +226,63 @@ validate_containerfile() {
     fi
 }
 
+# Validate OpenCode checksum file
+validate_checksums() {
+    log_section "Validating OpenCode Checksums"
+
+    local checksum_file="${PROJECT_ROOT}/build/.opencode-checksums"
+
+    if [[ ! -f "${checksum_file}" ]]; then
+        log_fail "Checksum file not found: build/.opencode-checksums"
+        return 1
+    fi
+
+    log_pass "Checksum file exists"
+
+    # Validate format: each non-comment line must match "<64 hex chars>  <filename>"
+    local line_num=0
+    local entry_count=0
+    local format_errors=0
+
+    while IFS= read -r line; do
+        ((line_num++)) || true
+
+        # Skip comments and blank lines
+        if [[ "${line}" =~ ^[[:space:]]*# ]] || [[ -z "${line// /}" ]]; then
+            continue
+        fi
+
+        # Validate format: 64 hex chars, two spaces, filename
+        if [[ "${line}" =~ ^[0-9a-f]{64}\ \ [a-zA-Z0-9._-]+$ ]]; then
+            ((entry_count++)) || true
+        else
+            log_fail "Invalid format at line ${line_num}: ${line}"
+            ((format_errors++)) || true
+        fi
+    done < "${checksum_file}"
+
+    if [[ "${format_errors}" -eq 0 ]]; then
+        log_pass "All checksum entries have valid format"
+    else
+        log_fail "${format_errors} checksum entry(ies) have invalid format"
+    fi
+
+    # Check required architectures are present
+    if grep -qE "opencode-linux-x64\.tar\.gz$" "${checksum_file}"; then
+        log_pass "Checksum entry for x64 architecture present"
+    else
+        log_fail "Missing checksum entry for x64 architecture"
+    fi
+
+    if grep -qE "opencode-linux-arm64\.tar\.gz$" "${checksum_file}"; then
+        log_pass "Checksum entry for arm64 architecture present"
+    else
+        log_fail "Missing checksum entry for arm64 architecture"
+    fi
+
+    log_pass "Found ${entry_count} checksum entries"
+}
+
 # Validate project structure
 validate_structure() {
     log_section "Validating Project Structure"
@@ -231,6 +290,7 @@ validate_structure() {
     local required_files=(
         "build/Containerfile"
         "build/.opencode/opencode.json"
+        "build/.opencode-checksums"
         "build/etc/opencode/opencode.jsonc"
         "scripts/local-setup.sh"
         "build/entrypoint.sh"
@@ -325,6 +385,7 @@ main() {
     validate_permissions
     validate_submodules
     validate_containerfile
+    validate_checksums
     validate_structure
 
     # Print summary

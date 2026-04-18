@@ -250,6 +250,8 @@ jq . build/.opencode/opencode.json
 - **Provide both Podman and Docker** commands (Podman preferred)
 - **Keep submodules at tagged releases** when possible (not random commits)
 - **Pin all versions** - base images, apt packages, npm packages
+- **Verify SHA256 checksums** - OpenCode tarballs are verified against `build/.opencode-checksums` at build time
+- **Update checksums** when changing `build/.opencode-version` - fetch new digests from GitHub Releases API
 - **Multi-stage builds** - Separate builder and runtime stages
 - **Clean up layers** - Remove apt cache, temporary files
 - **Run as non-root** - Create dedicated user, use `USER` directive
@@ -287,6 +289,20 @@ jq . build/.opencode/opencode.json
 4. Update README.md with plugin description
 5. Test in container: `./scripts/build.sh --tag test --no-cache`
 6. Commit changes: `git add .gitmodules build/modules/ build/.opencode/opencode.json README.md && git commit -m "feat: add <name> plugin"`
+
+### Updating OpenCode Version
+
+1. Update `build/.opencode-version` with the new version number
+2. Fetch checksums from GitHub Releases API:
+   ```bash
+   VERSION="1.4.12"  # Use the new version
+   curl -fsSL "https://api.github.com/repos/anomalyco/opencode/releases/tags/v${VERSION}" \
+     | jq -r '.assets[] | select(.name | test("opencode-linux-(x64|arm64)\\.tar\\.gz$")) | "\(.digest | split(":")[1])  \(.name)"'
+   ```
+3. Update `build/.opencode-checksums` with the new hashes
+4. Run validation: `./scripts/validate.sh`
+5. Test container build: `./scripts/build.sh --tag test --no-cache`
+6. Commit: `git add build/.opencode-version build/.opencode-checksums && git commit -m "chore: update opencode to v${VERSION}"`
 
 ### Updating Container Bootstrap
 
@@ -337,6 +353,7 @@ Before committing container changes:
 - [ ] Vulnerability scan passed (`podman image scan`)
 - [ ] Bootstrap script has error handling (`set -euo pipefail`)
 - [ ] OpenCode config validated (JSON syntax check)
+- [ ] OpenCode checksums verified (`build/.opencode-checksums` matches tarballs)
 
 ## Testing Your Changes
 
