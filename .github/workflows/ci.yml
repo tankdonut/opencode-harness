@@ -42,8 +42,8 @@ jobs:
           sudo apt-get install -y jq
           pip install pre-commit
           # Install hadolint for Containerfile linting
-          HADOLINT_VERSION="2.12.0"
-          curl -fsSL "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-x86_64" \
+          HADOLINT_VERSION="2.14.0"
+          curl -fsSL "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-linux-x86_64" \
             -o /usr/local/bin/hadolint
           chmod +x /usr/local/bin/hadolint
 
