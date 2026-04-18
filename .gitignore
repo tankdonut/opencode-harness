@@ -36,7 +36,6 @@ docker/.env.local
 
 # Build Artifacts
 dist/
-build/
 *.tar
 *.tar.gz
 *.zip

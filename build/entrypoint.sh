@@ -301,8 +301,9 @@ install_oh_my_opencode() {
 
     log "Running: ${install_cmd}"
 
-    # Execute installation
-    if ${install_cmd}; then
+    # Execute installation (redirect output to stderr so it doesn't
+    # contaminate stdout when container is used programmatically)
+    if ${install_cmd} 2>&2 >&2; then
         log_success "Oh-My-OpenCode installed successfully"
 
         # Verify config was created

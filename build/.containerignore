@@ -1,0 +1,4 @@
+.opencode/node_modules/
+.opencode/bun.lock
+.opencode/package.json
+.opencode/.gitignore
