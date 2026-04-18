@@ -74,7 +74,7 @@ validate_json() {
     log_section "Validating JSON Configuration"
 
     local json_files=(
-        "${PROJECT_ROOT}/.opencode/opencode.json"
+        "${PROJECT_ROOT}/build/.opencode/opencode.json"
     )
 
     for file in "${json_files[@]}"; do
@@ -112,7 +112,7 @@ validate_permissions() {
 
     local executable_scripts=(
         "${PROJECT_ROOT}/scripts/local-setup.sh"
-        "${PROJECT_ROOT}/entrypoint.sh"
+        "${PROJECT_ROOT}/build/entrypoint.sh"
     )
 
     for script in "${executable_scripts[@]}"; do
@@ -183,7 +183,7 @@ validate_submodules() {
 validate_containerfile() {
     log_section "Validating Containerfile"
 
-    local containerfile="${PROJECT_ROOT}/Containerfile"
+    local containerfile="${PROJECT_ROOT}/build/Containerfile"
 
     if [[ ! -f "${containerfile}" ]]; then
         log_fail "Containerfile not found"
@@ -229,18 +229,18 @@ validate_structure() {
     log_section "Validating Project Structure"
 
     local required_files=(
-        "Containerfile"
-        ".opencode/opencode.json"
-        "etc/opencode/opencode.jsonc"
+        "build/Containerfile"
+        "build/.opencode/opencode.json"
+        "build/etc/opencode/opencode.jsonc"
         "scripts/local-setup.sh"
-        "entrypoint.sh"
+        "build/entrypoint.sh"
         "README.md"
         "AGENTS.md"
     )
 
     local required_dirs=(
-        "etc"
-        "modules"
+        "build/etc"
+        "build/modules"
         "scripts"
     )
 

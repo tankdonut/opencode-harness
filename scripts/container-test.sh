@@ -93,7 +93,7 @@ check_prerequisites() {
     # Check if image exists
     if ! ${CONTAINER_RUNTIME} image inspect "${IMAGE_NAME}" &>/dev/null; then
         log_fail "Image not found: ${IMAGE_NAME}"
-        log "Build the image first: ${CONTAINER_RUNTIME} build -t ${IMAGE_NAME} -f Containerfile ."
+        log "Build the image first: ./scripts/build.sh --tag ${IMAGE_NAME}"
         exit 2
     fi
     log_pass "Image found: ${IMAGE_NAME}"

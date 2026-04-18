@@ -6,8 +6,8 @@ set -euo pipefail
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC2155
 readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-readonly VERSION_FILE="${PROJECT_ROOT}/.opencode-version"
-readonly CONTAINERFILE="${PROJECT_ROOT}/Containerfile"
+readonly VERSION_FILE="${PROJECT_ROOT}/build/.opencode-version"
+readonly CONTAINERFILE="${PROJECT_ROOT}/build/Containerfile"
 
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
@@ -143,7 +143,7 @@ run_build() {
     build_cmd+=("-t" "${TAG}")
     build_cmd+=("${PASSTHROUGH_ARGS[@]+"${PASSTHROUGH_ARGS[@]}"}")
 
-    build_cmd+=("${PROJECT_ROOT}")
+    build_cmd+=("${PROJECT_ROOT}/build")
 
     if [[ ${#RUNTIME_ARGS[@]} -gt 0 ]]; then
         build_cmd+=("${RUNTIME_ARGS[@]}")
@@ -151,7 +151,7 @@ run_build() {
 
     log "Building image: ${TAG}"
     log "Runtime: ${RUNTIME}"
-    log "Context: ${PROJECT_ROOT}"
+    log "Context: ${PROJECT_ROOT}/build"
     log "Command: ${build_cmd[*]}"
     echo ""
 

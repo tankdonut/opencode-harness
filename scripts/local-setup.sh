@@ -6,8 +6,8 @@ set -euo pipefail
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC2155
 readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-readonly OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat "${PROJECT_ROOT}/.opencode-version" 2>/dev/null | tr -d '[:space:]')}"
-readonly CONFIG_PATH="${PROJECT_ROOT}/.opencode/opencode.json"
+readonly OPENCODE_VERSION="${OPENCODE_VERSION:-$(cat "${PROJECT_ROOT}/build/.opencode-version" 2>/dev/null | tr -d '[:space:]')}"
+readonly CONFIG_PATH="${PROJECT_ROOT}/build/.opencode/opencode.json"
 
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
@@ -99,9 +99,9 @@ init_submodules() {
     submodule_count=$(git submodule status | wc -l)
     log_success "Initialized ${submodule_count} git submodules"
 
-    if [[ -d "modules" ]]; then
+    if [[ -d "build/modules" ]]; then
         log_info "Available plugins:"
-        for module in modules/*/; do
+        for module in build/modules/*/; do
             if [[ -d "$module" ]]; then
                 local module_name
                 module_name=$(basename "$module")
