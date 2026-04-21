@@ -16,7 +16,7 @@ repos:
     hooks:
       - id: hadolint
         types: []
-        files: Containerfile
+        files: build/Containerfile
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
