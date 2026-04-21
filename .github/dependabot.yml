@@ -5,7 +5,7 @@ version: 2
 updates:
   # Monitor Containerfile for Docker image updates
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/build"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5

@@ -6,14 +6,16 @@ name: CI
 on:
   push:
     branches: [main, master]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
+    paths:
+      - 'build/**'
+      - 'scripts/**'
+      - 'tests/**'
   pull_request:
     branches: [main, master]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
+    paths:
+      - 'build/**'
+      - 'scripts/**'
+      - 'tests/**'
   workflow_dispatch:
 
 env:
