@@ -205,7 +205,7 @@ copy_assets() {
 
 # Source real implementations from entrypoint.sh (overrides stubs)
 # shellcheck source=../entrypoint.sh
-source "${BASH_SOURCE[0]%/*}/../entrypoint.sh"
+source "${BASH_SOURCE[0]%/*}/../build/entrypoint.sh"
 
 # =============================================================================
 # Test Cases
