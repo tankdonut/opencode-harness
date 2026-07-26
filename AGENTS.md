@@ -16,7 +16,6 @@ opencoder automates configuration, provides containerized environments, and stan
 opencoder/
 ├── .github/                    # GitHub configuration
 │   ├── CODEOWNERS              # Review auto-assignment
-│   ├── dependabot.yml          # Dependabot (docker + github-actions ecosystems)
 │   └── workflows/
 │       ├── lint-and-test.yaml           # Pre-commit via tankdonut/github-actions@v1
 │       ├── build-and-publish-image.yaml # Build, scan, publish to GHCR (cron + push + PR + dispatch)
