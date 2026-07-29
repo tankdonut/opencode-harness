@@ -166,6 +166,34 @@ The entrypoint passes subscription flags to `bunx oh-my-opencode install` at con
 
 Set `OMO_FORCE=yes` to force reinstall of oh-my-opencode regardless of existing state.
 
+> **Note:** `OMO_*` flags are **subscription toggles**, not credentials. They tell oh-my-opencode which models to add to agent fallback chains. Authentication is handled separately via environment variables (see below).
+
+## Provider Authentication
+
+OpenCode resolves provider credentials in priority order:
+
+1. **Environment variables** (highest priority) — recommended for containers
+2. **Project `.env` file**
+3. **`auth.json`** (`~/.local/share/opencode/auth.json`, written by interactive `opencode auth login`)
+
+For containers, pass the API key as an environment variable — no interactive TTY required, and it takes precedence over `auth.json`. The entrypoint does **not** call `opencode auth login`.
+
+### ZAI Coding Plan
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `ZHIPU_API_KEY` | Yes (to use GLM models) | API key for the `zai-coding-plan` provider (GLM-4.5, GLM-5.x). The base URL is pinned to `https://api.z.ai/api/coding/paas/v4` in `opencode.jsonc` as a workaround for [opencode#11106](https://github.com/anomalyco/opencode/issues/11106). |
+
+```bash
+# Run with ZAI Coding Plan authentication
+podman run -it --rm \
+  -e ZHIPU_API_KEY=your-key-here \
+  -e OMO_ZAI_CODING_PLAN=yes \
+  opencoder
+```
+
+`OMO_ZAI_CODING_PLAN=yes` enables the ZAI models in the fallback chain; `ZHIPU_API_KEY` provides the credential. Both are needed for the models to actually work.
+
 ## Adding Plugins
 
 1. Add the plugin to `build/.opencode/opencode.json` with a pinned version:

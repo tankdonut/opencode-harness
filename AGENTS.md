@@ -300,7 +300,15 @@ The entrypoint selectively enables each optional skill collection at container s
 | `ECC_ENABLED` | Runtime install of `everything-claude-code` skills via skills.sh CLI (default: disabled) |
 | `SUPERPOWERS_ENABLED` | Runtime install of `superpowers` skills via skills.sh CLI (default: disabled) |
 
-Additionally, `OMO_CLAUDE` / `OMO_GEMINI` / `OMO_COPILOT` / `OMO_OPENAI` / `OMO_OPENCODE_GO` / `OMO_OPENCODE_ZEN` / `OMO_ZAI_CODING_PLAN` (values: `yes`/`no`/`max20`) pass subscription config to `bunx oh-my-opencode install` at runtime. `OMO_FORCE=yes` forces reinstall.
+Additionally, `OMO_CLAUDE` / `OMO_GEMINI` / `OMO_COPILOT` / `OMO_OPENAI` / `OMO_OPENCODE_GO` / `OMO_OPENCODE_ZEN` / `OMO_ZAI_CODING_PLAN` (values: `yes`/`no`/`max20`) pass **subscription toggles** to `bunx oh-my-opencode install` at runtime — they control which LLM models are added to agent fallback chains, NOT authentication. `OMO_FORCE=yes` forces reinstall.
+
+### Provider Authentication
+
+OpenCode resolves provider credentials in priority order: **environment variables** > project `.env` file > `~/.local/share/opencode/auth.json` (written by interactive `opencode auth login`). Environment variables are the recommended path for containers — no interactive TTY required, and they take precedence over `auth.json`. The entrypoint deliberately does NOT call `opencode auth login`.
+
+| Env var | Provider | Purpose |
+|---------|----------|---------|
+| `ZHIPU_API_KEY` | `zai-coding-plan` | API key for ZAI Coding Plan subscription (GLM-4.5, GLM-5.x models). Base URL is pinned in `opencode.jsonc` as a workaround for [opencode#11106](https://github.com/anomalyco/opencode/issues/11106). |
 
 ### Runtime Environment Variables
 
