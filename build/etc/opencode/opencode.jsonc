@@ -43,6 +43,16 @@
             "which": "allow"
         }
     },
+    // Provider-specific overrides
+    // zai-coding-plan: pin base URL to the coding plan endpoint
+    // Workaround for opencode issue #11106 (endpoint auto-detection may fail)
+    "provider": {
+        "zai-coding-plan": {
+            "options": {
+                "baseURL": "https://api.z.ai/api/coding/paas/v4"
+            }
+        }
+    },
     // Plugins are defined in build/.opencode/opencode.json to keep project-level
     // and container-level plugin lists in sync
     // Sharing behavior for sessions (manual = explicit user action required)
