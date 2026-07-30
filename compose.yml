@@ -1,0 +1,67 @@
+# compose.yml - opencoder Container Orchestration
+#
+# Works with both docker compose and podman-compose.
+#
+# Usage:
+#   cp .env.example .env       # then edit .env with your API key
+#   docker compose run --rm opencode    # interactive session
+#
+# Build locally instead of pulling from GHCR:
+#   docker compose build
+#   docker compose run --rm opencode
+#
+# Architecture:
+#   /workspace        - bind mount of your project directory (read-write)
+#   /home/opencode    - named volume for container state (Bun cache, sessions,
+#                       auth.json) - persists across container restarts
+
+services:
+  opencode:
+    # Pulls from GHCR by default; builds locally if image not found
+    image: ghcr.io/tankdonut/opencoder:${OPENCODE_IMAGE_TAG:-latest}
+    build:
+      context: ./build
+      dockerfile: Containerfile
+
+    volumes:
+      # User's project (bind mount)
+      - .:/workspace
+      # Container state (named volume, persists across runs)
+      - opencode-home:/home/opencode
+
+    environment:
+      # === Provider Credentials ===
+      - ZHIPU_API_KEY=${ZHIPU_API_KEY:-}
+
+      # === Appearance ===
+      - OPENCODE_THEME=${OPENCODE_THEME:-ayu-dark}
+
+      # === Optional Skill Collections (require network at container start) ===
+      - ECC_ENABLED=${ECC_ENABLED:-0}
+      - SUPERPOWERS_ENABLED=${SUPERPOWERS_ENABLED:-0}
+
+      # === Oh-My-OpenCode Subscription Flags ===
+      # Control which LLM models are added to agent fallback chains.
+      # These are NOT credentials - they control model availability.
+      - OMO_CLAUDE=${OMO_CLAUDE:-no}
+      - OMO_GEMINI=${OMO_GEMINI:-no}
+      - OMO_COPILOT=${OMO_COPILOT:-no}
+      - OMO_OPENAI=${OMO_OPENAI:-no}
+      - OMO_OPENCODE_GO=${OMO_OPENCODE_GO:-no}
+      - OMO_OPENCODE_ZEN=${OMO_OPENCODE_ZEN:-no}
+      - OMO_ZAI_CODING_PLAN=${OMO_ZAI_CODING_PLAN:-no}
+      - OMO_FORCE=${OMO_FORCE:-}
+
+      # === Bootstrap Control ===
+      - OPENCODE_BOOTSTRAP_FORCE=${OPENCODE_BOOTSTRAP_FORCE:-0}
+
+      # === Telemetry (default: disabled) ===
+      - OMO_SEND_ANONYMOUS_TELEMETRY=${OMO_SEND_ANONYMOUS_TELEMETRY:-0}
+      - OMO_DISABLE_POSTHOG=${OMO_DISABLE_POSTHOG:-1}
+
+    tty: true
+    stdin_open: true
+    working_dir: /workspace
+
+volumes:
+  opencode-home:

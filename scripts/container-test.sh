@@ -157,16 +157,16 @@ test_opencode_installation() {
 test_configuration() {
     log_section "Testing Configuration"
 
-    # Check opencode.json exists
-    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /opencode/default/opencode.json; then
-        log_pass "opencode.json exists at /opencode/default/opencode.json"
+    # Check opencode.json exists at HOME (bootstrap copies it there at container start)
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /home/opencode/.opencode/opencode.json; then
+        log_pass "opencode.json exists at /home/opencode/.opencode/opencode.json"
     else
-        log_fail "opencode.json not found at /opencode/default/opencode.json"
+        log_fail "opencode.json not found at /home/opencode/.opencode/opencode.json"
         return
     fi
 
     # Validate JSON syntax
-    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq empty /workspace/.config/opencode/opencode.json 2>/dev/null; then
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq empty /home/opencode/.opencode/opencode.json 2>/dev/null; then
         log_pass "opencode.json is valid JSON"
     else
         log_fail "opencode.json has invalid JSON syntax"
@@ -174,7 +174,7 @@ test_configuration() {
 
     # Check plugin configuration
     local plugin_count
-    plugin_count=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq '.plugin | length' /workspace/.config/opencode/opencode.json 2>/dev/null || echo "0")
+    plugin_count=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" jq '.plugin | length' /home/opencode/.opencode/opencode.json 2>/dev/null || echo "0")
     if [[ "${plugin_count}" -gt 0 ]]; then
         log_pass "Plugin count: ${plugin_count}"
     else
@@ -224,6 +224,20 @@ test_skills() {
     fi
     log_pass "Baseline skills directory exists"
 
+    # Verify skills are symlinked into the opencode user's HOME (not copied)
+    if ! ${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" test -L /home/opencode/.agents/skills; then
+        log_fail "Skills symlink missing: /home/opencode/.agents/skills is not a symlink"
+    else
+        local link_target
+        link_target=$(${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" \
+            readlink -f /home/opencode/.agents/skills 2>/dev/null || echo "")
+        if [[ "${link_target}" == "/opencode/default/.agents/skills" ]]; then
+            log_pass "Skills symlinked: /home/opencode/.agents/skills -> /opencode/default/.agents/skills"
+        else
+            log_fail "Skills symlink target wrong (got: '${link_target}', want: /opencode/default/.agents/skills)"
+        fi
+    fi
+
     # Count SKILL.md files (18 baseline skills: OMO + agents-md + create-agentsmd + find-skills + superpowers subset)
     local skill_count
     skill_count=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" \
@@ -243,172 +257,37 @@ test_skills() {
     fi
 }
 
-# Test: Bootstrap creates config from default template
-test_bootstrap_creates_config() {
-    log_section "Testing Bootstrap Creates Config"
+# Test: Bootstrap does NOT pollute mounted workspace
+test_bootstrap_no_workspace_pollution() {
+    log_section "Testing Bootstrap Keeps Workspace Clean"
 
-    local test_dir="${TEST_WORKSPACE}/bootstrap-config-test"
+    local test_dir="${TEST_WORKSPACE}/bootstrap-pollution-test"
     mkdir -p "${test_dir}"
 
-    # Run container with fresh workspace (no existing config)
-    local config_created
-    config_created=$(${CONTAINER_RUNTIME} run --rm \
-        -v "${test_dir}:/workspace" \
-        "${IMAGE_NAME}" \
-        bash -c 'test -f /workspace/.config/opencode/opencode.json && echo "yes" || echo "no"' 2>/dev/null || echo "no")
-
-    if [[ "${config_created}" == "yes" ]]; then
-        log_pass "Bootstrap creates config file from default template"
-    else
-        log_fail "Bootstrap did not create config file"
-    fi
-
-    # Verify config is valid JSON
-    local json_valid
-    json_valid=$(${CONTAINER_RUNTIME} run --rm \
-        -v "${test_dir}:/workspace" \
-        "${IMAGE_NAME}" \
-        bash -c 'jq empty /workspace/.config/opencode/opencode.json 2>/dev/null && echo "yes" || echo "no"' 2>/dev/null || echo "no")
-
-    if [[ "${json_valid}" == "yes" ]]; then
-        log_pass "Bootstrap config is valid JSON"
-    else
-        log_fail "Bootstrap config is not valid JSON"
-    fi
-
-    rm -rf "${test_dir}"
-}
-
-# Test: Bootstrap copies plugin assets
-test_bootstrap_copies_assets() {
-    log_section "Testing Bootstrap Copies Assets"
-
-    local test_dir="${TEST_WORKSPACE}/bootstrap-assets-test"
-    mkdir -p "${test_dir}"
-
-    # Run container to trigger bootstrap
+    # Trigger bootstrap by running the entrypoint against a mounted workspace
     ${CONTAINER_RUNTIME} run --rm \
         -v "${test_dir}:/workspace" \
         "${IMAGE_NAME}" \
         bash -c 'exit 0' 2>/dev/null || true
 
-    # Check for asset directories
-    local asset_dirs=("skills")
-    local found_count=0
-
-    for asset_dir in "${asset_dirs[@]}"; do
-        local has_files
-        has_files=$(${CONTAINER_RUNTIME} run --rm \
-            -v "${test_dir}:/workspace" \
-            "${IMAGE_NAME}" \
-            bash -c "ls -1 /workspace/.config/opencode/${asset_dir} 2>/dev/null | wc -l" 2>/dev/null || echo "0")
-
-        if [[ "${has_files}" -gt 0 ]]; then
-            log_pass "Bootstrap copies ${asset_dir}/ directory (${has_files} files)"
-            ((found_count++)) || true
-        else
-            log_skip "No ${asset_dir}/ directory found (may not exist in modules)"
-        fi
-    done
-
-    if [[ "${found_count}" -gt 0 ]]; then
-        log_pass "Bootstrap copied ${found_count}/${#asset_dirs[@]} asset types"
+    # Config mirror must NOT be created in the mounted workspace
+    if ${CONTAINER_RUNTIME} run --rm \
+        -v "${test_dir}:/workspace" \
+        "${IMAGE_NAME}" \
+        test -d /workspace/.config/opencode; then
+        log_fail "Bootstrap polluted workspace: /workspace/.config/opencode created"
     else
-        log_skip "No asset directories found (modules may not include skills)"
+        log_pass "Bootstrap does not create /workspace/.config/opencode"
     fi
 
-    rm -rf "${test_dir}"
-}
-
-# Test: Bootstrap preserves existing config (no force)
-test_bootstrap_preserves_existing() {
-    log_section "Testing Bootstrap Preserves Existing Config"
-
-    local test_dir="${TEST_WORKSPACE}/bootstrap-preserve-test"
-    mkdir -p "${test_dir}/.config/opencode"
-
-    # Create custom config with unique marker
-    local custom_config='{"$schema":"https://opencode.ai/config.json","plugin":["custom-test-plugin"],"custom_marker":"preserve_test_12345"}'
-    echo "${custom_config}" > "${test_dir}/.config/opencode/opencode.json"
-
-    # Run container WITHOUT force flag
-    ${CONTAINER_RUNTIME} run --rm \
-        -v "${test_dir}:/workspace" \
-        -e OPENCODE_BOOTSTRAP_FORCE=0 \
-        "${IMAGE_NAME}" \
-        bash -c 'exit 0' 2>/dev/null || true
-
-    # Verify custom marker is preserved
-    local marker_preserved
-    marker_preserved=$(${CONTAINER_RUNTIME} run --rm \
+    # Skills must NOT be copied into the mounted workspace either
+    if ${CONTAINER_RUNTIME} run --rm \
         -v "${test_dir}:/workspace" \
         "${IMAGE_NAME}" \
-        bash -c 'jq -r ".custom_marker // empty" /workspace/.config/opencode/opencode.json 2>/dev/null' 2>/dev/null || echo "")
-
-    if [[ "${marker_preserved}" == "preserve_test_12345" ]]; then
-        log_pass "Bootstrap preserves existing config when OPENCODE_BOOTSTRAP_FORCE=0"
+        test -e /workspace/.agents/skills; then
+        log_fail "Bootstrap polluted workspace: /workspace/.agents/skills created"
     else
-        log_fail "Bootstrap overwrote existing config (marker lost: got '${marker_preserved}')"
-    fi
-
-    # Verify custom plugin is still there
-    local plugin_preserved
-    plugin_preserved=$(${CONTAINER_RUNTIME} run --rm \
-        -v "${test_dir}:/workspace" \
-        "${IMAGE_NAME}" \
-        bash -c 'jq -r ".plugin[0] // empty" /workspace/.config/opencode/opencode.json 2>/dev/null' 2>/dev/null || echo "")
-
-    if [[ "${plugin_preserved}" == "custom-test-plugin" ]]; then
-        log_pass "Bootstrap preserves custom plugin configuration"
-    else
-        log_fail "Bootstrap modified plugin configuration (got '${plugin_preserved}')"
-    fi
-
-    rm -rf "${test_dir}"
-}
-
-# Test: Bootstrap overwrites with force
-test_bootstrap_force_overwrites() {
-    log_section "Testing Bootstrap Force Overwrites Config"
-
-    local test_dir="${TEST_WORKSPACE}/bootstrap-force-test"
-    mkdir -p "${test_dir}/.config/opencode"
-
-    # Create custom config with unique marker
-    local custom_config='{"$schema":"https://opencode.ai/config.json","plugin":["should-be-overwritten"],"force_test_marker":"delete_me"}'
-    echo "${custom_config}" > "${test_dir}/.config/opencode/opencode.json"
-
-    # Run container WITH force flag
-    ${CONTAINER_RUNTIME} run --rm \
-        -v "${test_dir}:/workspace" \
-        -e OPENCODE_BOOTSTRAP_FORCE=1 \
-        "${IMAGE_NAME}" \
-        bash -c 'exit 0' 2>/dev/null || true
-
-    # Verify marker is gone (config was overwritten)
-    local marker_gone
-    marker_gone=$(${CONTAINER_RUNTIME} run --rm \
-        -v "${test_dir}:/workspace" \
-        "${IMAGE_NAME}" \
-        bash -c 'jq -r ".force_test_marker // empty" /workspace/.config/opencode/opencode.json 2>/dev/null' 2>/dev/null || echo "")
-
-    if [[ "${marker_gone}" == "" ]]; then
-        log_pass "Bootstrap overwrites config when OPENCODE_BOOTSTRAP_FORCE=1"
-    else
-        log_fail "Bootstrap did not overwrite config (marker still present: '${marker_gone}')"
-    fi
-
-    # Verify old plugin is gone
-    local plugin_overwritten
-    plugin_overwritten=$(${CONTAINER_RUNTIME} run --rm \
-        -v "${test_dir}:/workspace" \
-        "${IMAGE_NAME}" \
-        bash -c 'jq -r ".plugin[0] // empty" /workspace/.config/opencode/opencode.json 2>/dev/null' 2>/dev/null || echo "")
-
-    if [[ "${plugin_overwritten}" != "should-be-overwritten" ]]; then
-        log_pass "Bootstrap replaced custom plugins with defaults"
-    else
-        log_fail "Bootstrap kept old plugin configuration (got '${plugin_overwritten}')"
+        log_pass "Bootstrap does not create /workspace/.agents/skills"
     fi
 
     rm -rf "${test_dir}"
@@ -427,29 +306,30 @@ test_user_permissions() {
         log_fail "User 'opencode' not found"
     fi
 
-    # Check HOME directory is set to /workspace
+    # Check HOME directory is set to /home/opencode
     local home_dir
     home_dir=$(${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" bash -c "echo \$HOME" 2>/dev/null || echo "")
-    if [[ "${home_dir}" == "/workspace" ]]; then
-        log_pass "HOME directory is /workspace"
+    if [[ "${home_dir}" == "/home/opencode" ]]; then
+        log_pass "HOME directory is /home/opencode"
     else
-        log_fail "HOME directory is not /workspace (got: ${home_dir})"
+        log_fail "HOME directory is not /home/opencode (got: ${home_dir})"
     fi
 
     # Verify user's home directory in passwd
     local passwd_home
     passwd_home=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" getent passwd opencode | cut -d: -f6 2>/dev/null || echo "")
-    if [[ "${passwd_home}" == "/workspace" ]]; then
-        log_pass "User home in /etc/passwd is /workspace"
+    if [[ "${passwd_home}" == "/home/opencode" ]]; then
+        log_pass "User home in /etc/passwd is /home/opencode"
     else
-        log_fail "User home in /etc/passwd is not /workspace (got: ${passwd_home})"
+        log_fail "User home in /etc/passwd is not /home/opencode (got: ${passwd_home})"
     fi
 
-    # Check /workspace permissions
-    if ${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" test -r /workspace/.config/opencode/opencode.json; then
-        log_pass "opencode user can read /workspace/.config/opencode/opencode.json"
+    # Verify HOME is writable by the opencode user
+    if ${CONTAINER_RUNTIME} run --rm --user opencode "${IMAGE_NAME}" \
+        bash -c 'touch /home/opencode/.write-test && rm /home/opencode/.write-test' 2>/dev/null; then
+        log_pass "opencode user can write to /home/opencode"
     else
-        log_fail "opencode user cannot read /workspace/.config/opencode/opencode.json"
+        log_fail "opencode user cannot write to /home/opencode"
     fi
 }
 
@@ -470,7 +350,7 @@ test_environment() {
     # Check OPENCODE_CONFIG
     local config_value
     config_value=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" bash -c 'echo $OPENCODE_CONFIG')
-    if [[ "${config_value}" == "/opencode/default/opencode.json" ]]; then
+    if [[ "${config_value}" == "/home/opencode/.opencode/opencode.json" ]]; then
         log_pass "OPENCODE_CONFIG set correctly"
     else
         log_fail "OPENCODE_CONFIG not set correctly (got: ${config_value})"
@@ -582,10 +462,7 @@ main() {
     test_configuration
     test_directory_structure
     test_skills
-    test_bootstrap_creates_config
-    test_bootstrap_copies_assets
-    test_bootstrap_preserves_existing
-    test_bootstrap_force_overwrites
+    test_bootstrap_no_workspace_pollution
     test_user_permissions
     test_environment
     test_entrypoint

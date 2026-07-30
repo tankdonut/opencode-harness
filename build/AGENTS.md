@@ -10,8 +10,8 @@ The **sole container build context** for `podman/docker build`. Everything neede
 
 | Path | Role |
 |------|------|
-| `Containerfile` (121L) | Multi-stage image definition: `tools` stage → `ubuntu:26.04` runtime |
-| `entrypoint.sh` (509L) | Container ENTRYPOINT — the real bootstrap logic (runs at `podman run`, NOT build time) |
+| `Containerfile` (132L) | Multi-stage image definition: `tools` stage → `ubuntu:26.04` runtime |
+| `entrypoint.sh` (485L) | Container ENTRYPOINT — the real bootstrap logic (runs at `podman run`, NOT build time) |
 | `.opencode-version` | Single source of truth for OpenCode release (currently `1.17.6`) |
 | `.opencode-checksums` | SHA256 for `opencode-linux-{x64,arm64}.tar.gz` — integrity gate |
 | `.containerignore` | Excludes `.opencode/{node_modules,bun.lock,package.json}` from build context |
@@ -55,7 +55,7 @@ FROM docker.io/library/ubuntu:26.04
 # apt deps, bun@1.3.11 global install
 # COPY .opencode-version + .opencode-checksums → /etc/
 # RUN: curl opencode tarball, sha256sum -c verify, extract → /vendor/bin
-# Create non-root user opencode (uid 1001, HOME=/workspace)
+# Create non-root user opencode (uid 1001, HOME=/home/opencode)
 # COPY config, entrypoint; install skills via skills.sh CLI
 USER opencode
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
@@ -64,10 +64,10 @@ CMD ["/bin/bash"]
 
 **Key**: entrypoint.sh is COPIED (`--chmod=755`) but **NOT executed** at build time. It runs at every `podman run`.
 
-## entrypoint.sh — Dual-Mode Bootstrap (509L)
+## entrypoint.sh — Dual-Mode Bootstrap (485L)
 
 ### Sourceable + Executable
-Line 507 guard: `if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then main "$@"; fi`
+Line 483 guard: `if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then main "$@"; fi`
 - **Executed** as container ENTRYPOINT → runs `main()`
 - **Sourced** by `tests/test_bootstrap.sh` → imports helper functions only
 
@@ -75,9 +75,8 @@ Line 507 guard: `if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then main "$@"; fi`
 ```
 validate_environment  → check git/node/npm/curl/jq/python3/pip3/yq, PATH
 verify_opencode       → opencode --version vs /etc/opencode-version
-bootstrap_config      → copy_config + copy_theme_config
-                      ALSO mirrors to /workspace/.config/opencode/
-sync_skills           → mirror /opencode/default/.agents/skills/ → /workspace/.agents/skills/
+bootstrap_config      → copy_config + copy_theme_config (defaults from /opencode/default/ → writable $HOME/.opencode/)
+sync_skills           → symlink $HOME/.agents/skills → /opencode/default/.agents/skills/
 validate_config       → jq empty + plugin count > 0
 install_oh_my_opencode → bunx oh-my-opencode install (7 flags: OMO_CLAUDE/OMO_GEMINI/OMO_COPILOT/OMO_OPENAI/OMO_OPENCODE_GO/OMO_OPENCODE_ZEN/OMO_ZAI_CODING_PLAN; OMO_FORCE=yes forces) (warns on failure, non-fatal)
 install_optional_skills → ECC/superpowers runtime install when ECC_ENABLED/SUPERPOWERS_ENABLED set (network required)
@@ -91,7 +90,7 @@ exec "$@"             → hand off to CMD (/bin/bash) or user args
 - `create_config_dir` — mkdir -p with ownership
 - `copy_config` — `cp -n` (no-clobber) unless `OPENCODE_BOOTSTRAP_FORCE=1`
 - `copy_theme_config` — TUI theme setup
-- `sync_skills` — mirrors build-time skills from `/opencode/default/.agents/skills/` into the workspace
+- `sync_skills` — creates symlink from `$HOME/.agents/skills` to `/opencode/default/.agents/skills/` (keeps skills available in HOME without polluting the bind-mounted workspace)
 - `install_optional_skills` — runtime installer for ECC/superpowers via skills.sh CLI (gated by `ECC_ENABLED` / `SUPERPOWERS_ENABLED`)
 
 ### Force Flag
@@ -99,9 +98,10 @@ exec "$@"             → hand off to CMD (/bin/bash) or user args
 
 ### Known Tricky Logic
 1. **Line 328**: `${install_cmd} 2>&2 >&2` — unusual redirect, sends all output to stderr (keeps stdout clean)
-2. **Lines 227-261**: `bootstrap_config` mirrors config **twice** (once for `/opencode/default`, once for `/workspace`) — duplicated logic, refactor candidate
-3. **Line 149/187**: `cp -n` / `cp -rn` — GNU cp extensions; won't work on macOS bash 3.2
-4. **Line 79/77**: `${flag_value,,}` (lowercase) and `${!flag_name:-1}` (indirect expansion) — bash 4+ required
+2. **Line 149/187**: `cp -n` / `cp -rn` — GNU cp extensions; won't work on macOS bash 3.2
+3. **Line 79/77**: `${flag_value,,}` (lowercase) and `${!flag_name:-1}` (indirect expansion) — bash 4+ required
+4. **Line 336-346**: `sync_skills` replaces an existing symlink only if it points to the wrong target; a real directory at `$HOME/.agents/skills` is left alone (logs a warning)
+5. **Line 100-106 (Containerfile)**: `useradd -m -d /home/opencode` sets HOME to `/home/opencode`, NOT `/workspace`. This is intentional: bind-mounting a host dir to `/workspace` must not shadow the container HOME (Bun JIT, config writes depend on writable HOME).
 
 ## Skills Distribution
 

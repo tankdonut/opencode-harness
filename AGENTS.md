@@ -30,7 +30,7 @@ opencoder/
 │   ├── .opencode-version       # Pinned OpenCode version (single source of truth)
 │   ├── .opencode-checksums     # SHA256 checksums (x64 + arm64 tarballs)
 │   ├── Containerfile           # Multi-stage image def: tools → ubuntu:26.04 → runtime
-│   ├── entrypoint.sh           # Container ENTRYPOINT (509L, real bootstrap logic)
+│   ├── entrypoint.sh           # Container ENTRYPOINT (485L, real bootstrap logic)
 │   ├── .opencode/              # PROJECT-LEVEL config (plugins only, strict JSON)
 │   │   ├── opencode.json       # OpenCode plugin list (npm-pinned)
 │   │   ├── dcp.json            # Dynamic Context Pruning plugin config (50%/40%)
@@ -49,17 +49,19 @@ opencoder/
 ├── scripts/                    # Host-side automation (see scripts/AGENTS.md)
 │   ├── build.sh                # Container build driver (204L)
 │   ├── bump-version.sh         # OpenCode version + checksum updater (284L)
-│   ├── container-test.sh       # Post-build integration test suite (594L, CI-run)
+│   ├── container-test.sh       # Post-build integration test suite (598L, CI-run)
 │   ├── local-setup.sh          # Host bootstrap (non-container path)
 │   ├── opencode-sandbox.sh     # Linux sandbox wrapper: bwrap / gVisor / nspawn (392L)
 │   └── validate.sh             # Pre-build validation (395L, CI-run)
 ├── tests/                     # Unit tests (see tests/AGENTS.md)
-│   └── test_bootstrap.sh      # TDD tests for entrypoint helpers (557L, NOT in CI)
+│   └── test_bootstrap.sh      # TDD tests for entrypoint helpers (457L, NOT in CI)
 ├── docs/guides/               # User-facing markdown guides
 │   ├── configuration.md        # Config reference + module toggle env vars
 │   ├── installation.md         # Agent-optimized install guide
 │   ├── installation-detailed.md # Human-optimized, all-platforms guide
 │   └── usage.md                # Workflows + CI/CD examples
+├── compose.yml                # Docker/Podman Compose definition (two-volume design)
+├── .env.example               # Template for compose env vars (gitignored as .env)
 ├── .gitignore                  # Git exclusions
 ├── AGENTS.md                   # This file
 ├── CONTRIBUTING.md             # Contribution guidelines
@@ -301,6 +303,8 @@ The entrypoint selectively enables each optional skill collection at container s
 | `SUPERPOWERS_ENABLED` | Runtime install of `superpowers` skills via skills.sh CLI (default: disabled) |
 
 Additionally, `OMO_CLAUDE` / `OMO_GEMINI` / `OMO_COPILOT` / `OMO_OPENAI` / `OMO_OPENCODE_GO` / `OMO_OPENCODE_ZEN` / `OMO_ZAI_CODING_PLAN` (values: `yes`/`no`/`max20`) pass **subscription toggles** to `bunx oh-my-opencode install` at runtime — they control which LLM models are added to agent fallback chains, NOT authentication. `OMO_FORCE=yes` forces reinstall.
+
+> **Compose users:** `compose.yml` surfaces all of the above env vars (plus `ZHIPU_API_KEY`, `OPENCODE_THEME`, bootstrap force, and telemetry flags) through `.env`. Copy `.env.example` to `.env` and edit values there instead of passing `-e` flags on every run. See `docs/guides/usage.md` for the compose workflow.
 
 ### Provider Authentication
 

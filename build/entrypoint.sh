@@ -11,8 +11,11 @@ set -euo pipefail
 OPENCODE_VERSION="$(cat /etc/opencode-version 2>/dev/null | tr -d '[:space:]')" || true
 readonly OPENCODE_VERSION
 readonly OPENCODE_THEME="${OPENCODE_THEME:-ayu-dark}"
-readonly CONFIG_PATH="${OPENCODE_CONFIG:-/opencode/default/opencode.json}"
+# Writable config destination (in HOME — survives bind-mount shadowing)
+readonly HOME_CONFIG_DIR="${HOME}/.opencode"
+readonly HOME_CONFIG_PATH="${HOME_CONFIG_DIR}/opencode.json"
 readonly VENDOR_BIN="/vendor/bin"
+# Read-only image defaults (source for bootstrap_config copy)
 readonly DEFAULT_CONFIG_SOURCE="/opencode/default/opencode.json"
 readonly DEFAULT_TUI_SOURCE="/opencode/default/tui.json"
 readonly DEFAULT_THEMES_SOURCE="/opencode/default/themes"
@@ -67,10 +70,10 @@ command_exists() {
 # Bootstrap Helper Functions
 # =============================================================================
 
-# Derive config directory from CONFIG_PATH
+# Derive config directory from a config file path
 # Given "/opencode/default/opencode.json", returns "/opencode/default"
 derive_config_dir() {
-    local config_path="${1:-$CONFIG_PATH}"
+    local config_path="${1:-$HOME_CONFIG_PATH}"
 
     if [[ -z "$config_path" ]]; then
         log_error "derive_config_dir: config_path is required"
@@ -117,7 +120,10 @@ copy_config() {
     local target_dir
     target_dir=$(dirname "$target")
     if [[ ! -d "$target_dir" ]]; then
-        mkdir -p "$target_dir"
+        if ! mkdir -p "$target_dir"; then
+            log_error "copy_config: cannot create target directory: $target_dir"
+            return 1
+        fi
     fi
 
     if [[ "$force" == "1" ]]; then
@@ -157,23 +163,10 @@ copy_theme_config() {
 bootstrap_config() {
     log "Bootstrapping OpenCode configuration..."
 
-    local config_dir
-    config_dir=$(derive_config_dir "$CONFIG_PATH")
+    create_config_dir "$HOME_CONFIG_DIR"
 
-    create_config_dir "$config_dir"
-
-    copy_config "$DEFAULT_CONFIG_SOURCE" "$CONFIG_PATH"
-    copy_theme_config "$config_dir"
-
-    # Sync config to workspace directory for runtime use
-    # Ensures /workspace/.config/opencode/opencode.json is managed by
-    # the bootstrap process, respecting OPENCODE_BOOTSTRAP_FORCE
-    local workspace_config_dir="/workspace/.config/opencode"
-    if [[ -d "/workspace" ]]; then
-        create_config_dir "$workspace_config_dir"
-        copy_config "$DEFAULT_CONFIG_SOURCE" "${workspace_config_dir}/opencode.json"
-        copy_theme_config "$workspace_config_dir"
-    fi
+    copy_config "$DEFAULT_CONFIG_SOURCE" "$HOME_CONFIG_PATH"
+    copy_theme_config "$HOME_CONFIG_DIR"
 
     log_success "Configuration bootstrap complete"
 }
@@ -185,12 +178,8 @@ bootstrap_config() {
 install_oh_my_opencode() {
     log "Oh-My-OpenCode installation enabled"
 
-    # Derive config directory from CONFIG_PATH
-    local config_dir
-    config_dir=$(derive_config_dir "$CONFIG_PATH")
-
-    # Path to oh-my-opencode config
-    local omo_config="${config_dir}/oh-my-opencode.json"
+    # Path to oh-my-opencode marker (installer writes to ~/.omo/omo.jsonc)
+    local omo_config="${HOME}/.omo/omo.jsonc"
 
     # Check if we need to install
     local should_install=false
@@ -200,11 +189,11 @@ install_oh_my_opencode() {
             log "OMO_FORCE set, will reinstall"
             should_install=true
         else
-            log "oh-my-opencode.json exists, skipping (set OMO_FORCE to reinstall)"
+            log "OMO config exists, skipping (set OMO_FORCE to reinstall)"
             return 0
         fi
     else
-        log "oh-my-opencode.json not found, will install"
+        log "OMO config not found, will install"
         should_install=true
     fi
 
@@ -221,32 +210,30 @@ install_oh_my_opencode() {
     local opencode_zen_flag="${OMO_OPENCODE_ZEN:-no}"
     local zai_coding_plan_flag="${OMO_ZAI_CODING_PLAN:-no}"
 
-    # Build the install command
-    local install_cmd="bunx oh-my-opencode install --no-tui"
-    install_cmd+=" --claude=${claude_flag}"
-    install_cmd+=" --gemini=${gemini_flag}"
-    install_cmd+=" --copilot=${copilot_flag}"
-    install_cmd+=" --openai=${openai_flag}"
-    install_cmd+=" --opencode-go=${opencode_go_flag}"
-    install_cmd+=" --opencode-zen=${opencode_zen_flag}"
-    install_cmd+=" --zai-coding-plan=${zai_coding_plan_flag}"
+    local -a install_cmd=(
+        bunx oh-my-opencode install --no-tui
+        --claude="${claude_flag}"
+        --gemini="${gemini_flag}"
+        --copilot="${copilot_flag}"
+        --openai="${openai_flag}"
+        --opencode-go="${opencode_go_flag}"
+        --opencode-zen="${opencode_zen_flag}"
+        --zai-coding-plan="${zai_coding_plan_flag}"
+    )
 
-    log "Running: ${install_cmd}"
+    log "Running: ${install_cmd[*]}"
 
-    # Execute installation (redirect output to stderr so it doesn't
-    # contaminate stdout when container is used programmatically)
-    if ${install_cmd} 2>&2 >&2; then
-        log_success "Oh-My-OpenCode installed successfully"
-
-        # Verify config was created
-        if [[ -f "$omo_config" ]]; then
-            log "Config created at: ${omo_config}"
-        else
-            log_warn "Config file not found at ${omo_config}"
-        fi
-    else
+    if ! "${install_cmd[@]}" >&2 2>&1; then
         log_error "Oh-My-OpenCode installation failed"
         return 1
+    fi
+
+    log_success "Oh-My-OpenCode installed successfully"
+
+    if [[ -f "$omo_config" ]]; then
+        log "Config created at: ${omo_config}"
+    else
+        log_warn "Config file not found at ${omo_config}"
     fi
 }
 
@@ -282,11 +269,13 @@ verify_opencode() {
     fi
 
     local installed_version
-    installed_version=$(opencode --version 2>/dev/null | head -n1 || echo "unknown")
+    if ! installed_version=$(opencode --version 2>&1 | head -n1); then
+        log_error "OpenCode binary exists but fails to execute"
+        return 1
+    fi
 
     log_success "OpenCode ${installed_version} found"
 
-    # Verify version matches expected (if OPENCODE_VERSION is set)
     if [[ -n "${OPENCODE_VERSION:-}" ]]; then
         if [[ "$installed_version" != *"${OPENCODE_VERSION}"* ]]; then
             log_warn "Installed version (${installed_version}) differs from expected (${OPENCODE_VERSION})"
@@ -298,26 +287,26 @@ verify_opencode() {
 validate_config() {
     log "Validating OpenCode configuration..."
 
-    if [[ ! -f "$CONFIG_PATH" ]]; then
-        log_error "Config file not found at $CONFIG_PATH"
+    if [[ ! -f "$HOME_CONFIG_PATH" ]]; then
+        log_error "Config file not found at $HOME_CONFIG_PATH"
         return 1
     fi
 
     # Validate JSON syntax
-    if ! jq empty "$CONFIG_PATH" 2>/dev/null; then
-        log_error "Invalid JSON syntax in $CONFIG_PATH"
+    if ! jq empty "$HOME_CONFIG_PATH" 2>/dev/null; then
+        log_error "Invalid JSON syntax in $HOME_CONFIG_PATH"
         return 1
     fi
 
     # Check for required fields
     local schema_url
-    schema_url=$(jq -r '."$schema" // empty' "$CONFIG_PATH")
+    schema_url=$(jq -r '."$schema" // empty' "$HOME_CONFIG_PATH")
     if [[ -z "$schema_url" ]]; then
         log_warn "No \$schema field in config (recommended: https://opencode.ai/config.json)"
     fi
 
     local plugin_count
-    plugin_count=$(jq '.plugin | length' "$CONFIG_PATH")
+    plugin_count=$(jq '.plugin | length' "$HOME_CONFIG_PATH")
     log "Found ${plugin_count} plugins configured"
 
     log_success "Configuration validation passed"
@@ -329,19 +318,40 @@ sync_skills() {
         return 0
     fi
 
-    local workspace_skills="/workspace/.agents/skills"
-    mkdir -p "$workspace_skills"
+    local home_skills="${HOME}/.agents/skills"
+    local home_agents_dir
+    home_agents_dir="$(dirname "$home_skills")"
 
-    local force="${OPENCODE_BOOTSTRAP_FORCE:-0}"
-    if [[ "$force" == "1" ]]; then
-        cp -r "${DEFAULT_SKILLS_SOURCE}/." "${workspace_skills}/"
-    else
-        cp -rn "${DEFAULT_SKILLS_SOURCE}/." "${workspace_skills}/"
+    if ! mkdir -p "$home_agents_dir" 2>/dev/null; then
+        log_error "Cannot create $home_agents_dir (HOME should be writable)"
+        return 1
+    fi
+
+    if [[ -L "$home_skills" ]]; then
+        local current_target
+        current_target=$(readlink -f "$home_skills" 2>/dev/null || echo "")
+        if [[ "$current_target" == "$DEFAULT_SKILLS_SOURCE" ]]; then
+            local skill_count
+            skill_count=$(find "$DEFAULT_SKILLS_SOURCE" -name 'SKILL.md' | wc -l)
+            log_success "Skills symlink already configured (${skill_count} skills)"
+            return 0
+        fi
+        rm -f "$home_skills"
+    fi
+
+    if [[ -d "$home_skills" ]] && [[ ! -L "$home_skills" ]]; then
+        log_warn "$home_skills exists as a directory (not symlinking to avoid overwriting)"
+        return 0
+    fi
+
+    if ! ln -s "$DEFAULT_SKILLS_SOURCE" "$home_skills"; then
+        log_error "Failed to create skills symlink at $home_skills"
+        return 1
     fi
 
     local skill_count
-    skill_count=$(find "$workspace_skills" -name 'SKILL.md' | wc -l)
-    log_success "Synced ${skill_count} skills to workspace"
+    skill_count=$(find "$DEFAULT_SKILLS_SOURCE" -name 'SKILL.md' | wc -l)
+    log_success "Symlinked ${skill_count} skills to ${home_skills}"
 }
 
 install_optional_skills() {
@@ -390,14 +400,14 @@ verify_installation() {
     fi
 
     # Check config is readable
-    if [[ ! -r "$CONFIG_PATH" ]]; then
-        log_error "Config file not readable at $CONFIG_PATH"
+    if [[ ! -r "$HOME_CONFIG_PATH" ]]; then
+        log_error "Config file not readable at $HOME_CONFIG_PATH"
         return 1
     fi
 
     # List configured plugins
     log "Configured plugins:"
-    jq -r '.plugin[]' "$CONFIG_PATH" | while read -r plugin; do
+    jq -r '.plugin[]' "$HOME_CONFIG_PATH" | while read -r plugin; do
         log "  - ${plugin}"
     done
 
@@ -411,10 +421,10 @@ print_summary() {
     log "  opencoder Bootstrap Complete"
     log "========================================="
     log ""
-    log "OpenCode Version: $(opencode --version 2>/dev/null | head -n1 || echo 'unknown')"
-    log "Config Path: ${CONFIG_PATH}"
+    log "OpenCode Version: $(opencode --version 2>&1 | head -n1 || echo 'unable to determine')"
+    log "Config Path: ${HOME_CONFIG_PATH}"
     log "Theme: ${OPENCODE_THEME}"
-    log "Plugin Count: $(jq '.plugin | length' "$CONFIG_PATH")"
+    log "Plugin Count: $(jq '.plugin | length' "$HOME_CONFIG_PATH")"
     log ""
     log "To start using OpenCode:"
     log "  opencode"
@@ -422,21 +432,36 @@ print_summary() {
     log "========================================="
 }
 
-# Main execution
+handle_error() {
+    local exit_code=$?
+    log_error "Bootstrap failed (exit code ${exit_code})"
+    exit "$exit_code"
+}
+
 main() {
+    trap 'handle_error' ERR
     log "Starting opencoder bootstrap..."
     log ""
 
-    validate_environment || exit 1
-    verify_opencode || exit 1
-    bootstrap_config || exit 1
-    sync_skills || true
-    validate_config || exit 1
+    validate_environment
+    verify_opencode
+    bootstrap_config
+
+    if ! sync_skills; then
+        log_warn "Skills sync failed"
+    fi
+
+    validate_config
+
     if ! install_oh_my_opencode; then
         log_warn "Oh-My-OpenCode installation failed (orchestrator features unavailable; container continues)"
     fi
-    install_optional_skills || true
-    verify_installation || exit 1
+
+    if ! install_optional_skills; then
+        log_warn "Optional skills installation incomplete"
+    fi
+
+    verify_installation
 
     print_summary
 
@@ -444,6 +469,7 @@ main() {
 
     if [[ $# -gt 0 ]]; then
         log "Executing: $*"
+        export OPENCODE_CONFIG="$HOME_CONFIG_PATH"
         exec "$@"
     fi
 }

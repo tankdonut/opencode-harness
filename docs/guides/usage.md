@@ -39,6 +39,41 @@ podman run -it --rm opencoder
 podman run --rm opencoder opencode --help
 ```
 
+### Docker Compose / Podman Compose
+
+The project ships a `compose.yml` and `.env.example` at the root for repeatable container runs without memorizing flags. Compose manages two volumes behind the scenes:
+
+- `/workspace` binds your project directory (read-write)
+- `/home/opencode` is a named volume for container state (Bun cache, sessions, auth.json), persisted across runs
+
+**Quick start:**
+
+```bash
+# 1. Create your .env from the template
+cp .env.example .env
+
+# 2. Edit .env to set your API key
+#    ZHIPU_API_KEY=your-key-here
+
+# 3. Run interactively (Docker)
+docker compose run --rm opencode
+
+# 3b. Or with Podman Compose
+podman-compose run --rm opencode
+```
+
+**Local builds instead of pulling from GHCR:**
+
+```bash
+# Build the image first
+docker compose build
+
+# Then run
+docker compose run --rm opencode
+```
+
+Every environment variable documented in the [Configuration Guide](configuration.md) (provider keys, skill toggles, subscription flags, telemetry) can be set in `.env` and compose will pass it through automatically. The `.env` file is gitignored; `.env.example` is safe to commit.
+
 ## Development Workflows
 
 ### Project Development

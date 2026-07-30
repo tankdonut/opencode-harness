@@ -349,6 +349,53 @@ test_copy_config_existing_with_force() {
     rm -rf "$temp_dir"
 }
 
+# Test 7: handle_error function is defined (sourced from entrypoint.sh)
+test_handle_error_defined() {
+    assert_equals "function" "$(type -t handle_error 2>/dev/null || echo "")" \
+        "handle_error should be defined when entrypoint.sh is sourced"
+}
+
+# Test 8: verify_opencode returns 1 when binary fails to execute
+test_verify_opencode_detects_broken_binary() {
+    local temp_dir
+    temp_dir=$(mktemp -d) || return 1
+
+    mkdir -p "${temp_dir}/bin"
+    printf '#!/usr/bin/env bash\nexit 1\n' > "${temp_dir}/bin/opencode"
+    chmod +x "${temp_dir}/bin/opencode"
+
+    local old_path="$PATH"
+    export PATH="${temp_dir}/bin:${PATH}"
+
+    assert_fails "verify_opencode should return 1 when binary exits non-zero" verify_opencode
+
+    export PATH="$old_path"
+    rm -rf "$temp_dir"
+}
+
+# Test 9: symlink mechanism works for skills (tests ln -s + readlink pattern)
+test_sync_skills_symlink_logic() {
+    local temp_dir
+    temp_dir=$(mktemp -d) || return 1
+
+    local fake_source="${temp_dir}/default-skills/.agents/skills"
+    local fake_home="${temp_dir}/home"
+
+    mkdir -p "$fake_source/test-skill"
+    echo "# Test Skill" > "${fake_source}/test-skill/SKILL.md"
+    mkdir -p "${fake_home}/.agents"
+
+    ln -s "$fake_source" "${fake_home}/.agents/skills"
+
+    assert_equals "$fake_source" "$(readlink -f "${fake_home}/.agents/skills")" \
+        "Symlink should point to source directory"
+
+    assert_file_exists "${fake_home}/.agents/skills/test-skill/SKILL.md" \
+        "SKILL.md should be accessible through symlink"
+
+    rm -rf "$temp_dir"
+}
+
 # =============================================================================
 # Test Runner
 # =============================================================================
@@ -372,6 +419,9 @@ main() {
     run_test "test_copy_config_missing_target" test_copy_config_missing_target
     run_test "test_copy_config_existing_no_force" test_copy_config_existing_no_force
     run_test "test_copy_config_existing_with_force" test_copy_config_existing_with_force
+    run_test "test_handle_error_defined" test_handle_error_defined
+    run_test "test_verify_opencode_detects_broken_binary" test_verify_opencode_detects_broken_binary
+    run_test "test_sync_skills_symlink_logic" test_sync_skills_symlink_logic
 
     echo ""
     echo "========================================"

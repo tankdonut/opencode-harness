@@ -18,16 +18,16 @@ bash tests/test_bootstrap.sh
 
 | File | LOC | Runs in CI? | Tests |
 |------|-----|-------------|-------|
-| `test_bootstrap.sh` | 557 | ❌ No | 6 unit tests for 3 entrypoint.sh helpers |
-| (`scripts/container-test.sh`) | 594 | ✅ Yes | 15 integration tests (black-box, spins containers) |
+| `test_bootstrap.sh` | 457 | ❌ No | 9 unit tests for entrypoint.sh helpers |
+| (`scripts/container-test.sh`) | 598 | ✅ Yes | 15 integration tests (black-box, spins containers) |
 
 ## Test Architecture
 
 ### How It Works (stub-override pattern)
 "TDD" in the original sense is historical — these are plain unit tests. The mechanism:
 1. Defines **stub functions** for the 3 helpers (all return `1` with `STUB_NOT_IMPLEMENTED`)
-2. **Sources** `../build/entrypoint.sh` (line 208) which **overrides** the stubs with real implementations
-3. entrypoint.sh's `BASH_SOURCE[0] == ${0}` guard (line 507) prevents `main()` from executing during source
+2. **Sources** `../build/entrypoint.sh` (line 196) which **overrides** the stubs with real implementations
+3. entrypoint.sh's `BASH_SOURCE[0] == ${0}` guard (line 483) prevents `main()` from executing during source
 4. Tests call the real implementations against temp dirs
 
 ### Custom Assertion API (lines 29-126)
@@ -46,17 +46,20 @@ assert_fails       "<command>" "<message>"   # runs in subshell
 run_test "<name>" <test_function>   # always returns 0 (non-bail); tallies PASS/FAIL/SKIP
 skip_test "<name>" "<reason>"        # marks as skipped
 ```
-**Warning**: `main()` returns 0 even when tests fail (line 549, TDD-friendly). CI cannot gate on exit code — must parse output.
+**Warning**: `main()` returns 0 even when tests fail (line 449, TDD-friendly). CI cannot gate on exit code — must parse output.
 
 ## What's Tested
 
-6 test cases covering 3 helper functions:
+9 test cases covering bootstrap helpers and integration patterns:
 
-| Function | Test Cases |
+| Function / Pattern | Test Cases |
 |----------|-----------|
 | `derive_config_dir` | basic resolution |
 | `create_config_dir` | missing dir (creates), existing dir (idempotent) |
 | `copy_config` | missing target (creates), existing no-force (preserves), existing with force (overwrites) |
+| `handle_error` | function is defined when entrypoint.sh is sourced |
+| `verify_opencode` | returns 1 when the opencode binary exits non-zero (broken binary detection) |
+| Skills symlink pattern | `ln -s` + `readlink` creates a working symlink, SKILL.md accessible through it |
 
 **Force flag under test**: `OPENCODE_BOOTSTRAP_FORCE` env var (unset/0 = preserve, 1 = overwrite).
 
@@ -73,7 +76,7 @@ skip_test "<name>" "<reason>"        # marks as skipped
 1. **Temp dir leaks**: several early-return paths (`return 1` at lines 232, 240, 280, etc.) skip cleanup. No `trap` cleanup like container-test.sh has. Failed tests leak `/tmp/tmp.XXXXX`.
 2. **Exit code always 0**: CI cannot gate on exit code. If wiring into CI, change `main` to `return $TESTS_FAILED`.
 3. **Global env mutation**: `OPENCODE_BOOTSTRAP_FORCE` toggled globally — fragile if tests ever run in parallel (they don't, but still).
-4. **No coverage for**: `copy_theme_config`, `bootstrap_config` (the full orchestration), `install_oh_my_opencode`, `validate_*`, `verify_*` functions.
+4. **No coverage for**: `copy_theme_config`, `bootstrap_config` (the full orchestration), `install_oh_my_opencode`, `validate_*`. (`verify_opencode` is partially covered: the broken-binary path is tested; the success path is exercised indirectly by other tests.)
 
 ## Adding New Tests
 
