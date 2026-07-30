@@ -97,8 +97,13 @@ RUN set -eux; \
     \
     echo "✓ OpenCode ${OPENCODE_VERSION} installed successfully";
 
-# Create non-root user with HOME=/workspace
-RUN useradd -m -d /workspace -u 1001 -s /bin/bash opencode || useradd -m -d /workspace -s /bin/bash opencode
+# Create non-root user with HOME=/home/opencode (NOT /workspace).
+# HOME=/workspace was the root cause of permission failures: bind-mounting
+# a host directory to /workspace shadows the container HOME, so uid 1001
+# loses write access to its own HOME. This breaks Bun JIT cache, config
+# writes, and the opencode binary itself. /workspace remains WORKDIR for
+# the user's project; /home/opencode holds container state (always writable).
+RUN useradd -m -d /home/opencode -u 1001 -s /bin/bash opencode || useradd -m -d /home/opencode -s /bin/bash opencode
 
 WORKDIR /workspace
 
