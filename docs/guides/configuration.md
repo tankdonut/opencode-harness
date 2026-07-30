@@ -125,6 +125,19 @@ This file is copied to `/etc/opencode/opencode.jsonc` inside the container and c
 jq . build/etc/opencode/opencode.jsonc
 ```
 
+## Container Architecture: HOME vs Workspace
+
+The container splits its filesystem into two distinct directories with separate roles. Understanding this split prevents the most common container deployment mistakes.
+
+| Path | Mount Type | Contents |
+|------|-----------|----------|
+| `/home/opencode` | Named volume (container HOME) | Bun JIT cache, sessions, auth.json, `.opencode/` config+themes, `.agents/skills` symlink, oh-my-opencode config |
+| `/workspace` | Bind mount (host project) | Your source code, checked-out repos, working files |
+
+**Why the split exists:** Bun standalone binaries need a writable HOME directory for JIT compilation and cache writes. When `/workspace` was the container HOME, bind-mounting a host directory there would shadow the HOME and break those writes (host-owned UIDs differ from the container's `opencode` user). The split ensures container state never depends on host mount permissions.
+
+The entrypoint copies config defaults (opencode.json, tui.json, themes/) from the read-only image source (`/opencode/default/`) into the writable `$HOME/.opencode/` at container start, then exports `OPENCODE_CONFIG` to point there. This means `oh-my-opencode install` can write its config alongside, and user customizations persist in the named volume across container restarts. Skills are exposed through a symlink: `$HOME/.agents/skills` points to `/opencode/default/.agents/skills/`. Nothing is written to the bind-mounted `/workspace`.
+
 ## Container Module Control
 
 The entrypoint script (`build/entrypoint.sh`) supports environment variables to install optional skill collections at container startup. `oh-my-openagent` is always installed at build time; the others default to **disabled** and require network access at runtime.
