@@ -120,7 +120,10 @@ ENV PATH="/vendor/bin:${PATH}" \
     OMO_SEND_ANONYMOUS_TELEMETRY=0 \
     OMO_DISABLE_POSTHOG=1
 
-USER opencode
+# Numeric UID (not the symbolic "opencode") avoids hadolint DL3066 and matches
+# the explicit `-u 1001` in useradd above. The name is still resolvable for
+# COPY --chown because useradd already created it earlier in this stage.
+USER 1001
 
 # Install baseline skills (oh-my-openagent) from skills-lock.json
 # ECC and superpowers skills are installed at runtime via entrypoint.sh (opt-in)
