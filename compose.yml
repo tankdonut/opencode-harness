@@ -13,7 +13,7 @@
 # Architecture:
 #   /workspace        - bind mount of your project directory (read-write)
 #   /home/opencode    - named volume for container state (Bun cache, sessions,
-#                       auth.json) - persists across container restarts
+#                       auth.json, opencode-mem data) - persists across restarts
 
 services:
   opencode:
@@ -29,9 +29,23 @@ services:
       # Container state (named volume, persists across runs)
       - opencode-home:/home/opencode
 
+    ports:
+      # opencode-mem web UI (memory explorer). Reachable only when
+      # OPENCODE_MEM_WEB_EXPOSED=1 and OPENCODE_MEM_WEB_TOKEN are set — the
+      # plugin refuses non-loopback binds without an API token, and without
+      # exposure it listens on container-internal loopback only.
+      # Bound to host loopback by default; to open it up on your LAN, change
+      # to "${OPENCODE_MEM_WEB_PORT:-4747}:4747".
+      # NOTE: `compose run` publishes ports only with --service-ports.
+      - "127.0.0.1:${OPENCODE_MEM_WEB_PORT:-4747}:4747"
+
     environment:
       # === Provider Credentials ===
       - ZHIPU_API_KEY=${ZHIPU_API_KEY:-}
+
+      # === opencode-mem Web UI ===
+      - OPENCODE_MEM_WEB_EXPOSED=${OPENCODE_MEM_WEB_EXPOSED:-0}
+      - OPENCODE_MEM_WEB_TOKEN=${OPENCODE_MEM_WEB_TOKEN:-}
 
       # === Appearance ===
       - OPENCODE_THEME=${OPENCODE_THEME:-ayu-dark}
