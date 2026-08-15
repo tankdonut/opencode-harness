@@ -10,7 +10,7 @@ Host-side bash scripts that **build, validate, test, and bump** the OpenCode con
 |--------|-----|---------|------|
 | `validate.sh` | 395 | ✅ build-and-publish-image | Pre-build validation (7 checks + `--fix` mode) |
 | `build.sh` | 204 | ✅ build-and-publish-image | Container build driver (podman/docker auto-detect) |
-| `container-test.sh` | 598 | ✅ build-and-publish-image | Post-build integration suite (15 test groups) |
+| `container-test.sh` | 598 | ✅ build-and-publish-image | Post-build integration suite (16 test groups) |
 | `bump-version.sh` | 284 | ❌ manual | Atomic OpenCode version + checksum updater |
 | `local-setup.sh` | 303 | ❌ manual | Host bootstrap (non-container path) |
 | `opencode-sandbox.sh` | 392 | ❌ manual | Linux sandbox wrapper (bwrap / gVisor / nspawn modes) |
@@ -69,7 +69,7 @@ Black-box: spawns fresh `${CONTAINER_RUNTIME} run --rm` per assertion (~30+ cont
 # Logging
 log / log_pass / log_fail / log_skip / log_section
 
-# 15 test functions
+# 16 test functions
 test_container_startup        test_bootstrap_creates_config
 test_required_binaries        test_bootstrap_copies_assets
 test_opencode_installation    test_bootstrap_preserves_existing
@@ -77,6 +77,7 @@ test_configuration            test_bootstrap_force_overwrites
 test_directory_structure      test_user_permissions
 test_skills                   test_environment
 test_entrypoint               test_workspace_mounting
+test_bootstrap_no_workspace_pollution  test_bootstrap_copies_mem_config
 
 check_prerequisites / cleanup / print_summary / main
 ```

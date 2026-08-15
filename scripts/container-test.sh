@@ -293,6 +293,28 @@ test_bootstrap_no_workspace_pollution() {
     rm -rf "${test_dir}"
 }
 
+# Test: opencode-mem config bootstrap
+test_bootstrap_copies_mem_config() {
+    log_section "Testing opencode-mem Config Bootstrap"
+
+    # Each run is a fresh container; the ENTRYPOINT seeds the config before
+    # the check command executes, so no separate trigger run is needed.
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -f /home/opencode/.config/opencode/opencode-mem.jsonc; then
+        log_pass "opencode-mem.jsonc seeded at /home/opencode/.config/opencode/"
+    else
+        log_fail "opencode-mem.jsonc missing at /home/opencode/.config/opencode/"
+    fi
+
+    local mem_provider
+    mem_provider=$(${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" \
+        grep -o 'zai-coding-plan' /home/opencode/.config/opencode/opencode-mem.jsonc 2>/dev/null | head -1 || echo "")
+    if [[ -n "${mem_provider}" ]]; then
+        log_pass "opencode-mem auto-capture provider seeded (zai-coding-plan)"
+    else
+        log_fail "opencode-mem config lacks zai-coding-plan provider wiring"
+    fi
+}
+
 # Test: User and permissions
 test_user_permissions() {
     log_section "Testing User and Permissions"
@@ -463,6 +485,7 @@ main() {
     test_directory_structure
     test_skills
     test_bootstrap_no_workspace_pollution
+    test_bootstrap_copies_mem_config
     test_user_permissions
     test_environment
     test_entrypoint
