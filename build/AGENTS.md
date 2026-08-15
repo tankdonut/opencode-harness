@@ -11,7 +11,7 @@ The **sole container build context** for `podman/docker build`. Everything neede
 | Path | Role |
 |------|------|
 | `Containerfile` (132L) | Multi-stage image definition: `tools` stage → `ubuntu:26.04` runtime |
-| `entrypoint.sh` (485L) | Container ENTRYPOINT — the real bootstrap logic (runs at `podman run`, NOT build time) |
+| `entrypoint.py` | Container ENTRYPOINT (Python, stdlib-only) — the real bootstrap logic (runs at `podman run`, NOT build time) |
 | `.opencode-version` | Single source of truth for OpenCode release (currently `1.17.6`) |
 | `.opencode-checksums` | SHA256 for `opencode-linux-{x64,arm64}.tar.gz` — integrity gate |
 | `.containerignore` | Excludes `.opencode/{node_modules,bun.lock,package.json}` from build context |
@@ -58,18 +58,19 @@ FROM docker.io/library/ubuntu:26.04
 # Create non-root user opencode (uid 1001, HOME=/home/opencode)
 # COPY config, entrypoint; install skills via skills.sh CLI
 USER opencode
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.py"]
 CMD ["/bin/bash"]
 ```
 
-**Key**: entrypoint.sh is COPIED (`--chmod=755`) but **NOT executed** at build time. It runs at every `podman run`.
+**Key**: entrypoint.py is COPIED (`--chmod=755`) but **NOT executed** at build time. It runs at every `podman run`.
 
-## entrypoint.sh — Dual-Mode Bootstrap (485L)
+## entrypoint.py — Importable + Executable Bootstrap
 
-### Sourceable + Executable
-Line 483 guard: `if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then main "$@"; fi`
+### `if __name__ == "__main__"` guard (bottom of file)
 - **Executed** as container ENTRYPOINT → runs `main()`
-- **Sourced** by `tests/test_bootstrap.sh` → imports helper functions only
+- **Imported** by `tests/test_bootstrap.py` (via `importlib.util.spec_from_file_location`) → helper functions only, no bootstrap side effects
+
+Stdlib only — the image ships python3 with no pip packages. Fatal steps raise `BootstrapError` (caught in `main`, exit 1); soft steps (skills sync, OMO install, optional skills) return `False` and only warn. All logging goes to stderr; stdout stays clean. Trailing argv is `os.execv`'d as the container command.
 
 ### Bootstrap Flow (main)
 ```
@@ -141,13 +142,13 @@ Then rebuild (`./scripts/build.sh --tag test --no-cache`) and commit `skills-loc
 
 ### Adding a Runtime-Only Skill (opt-in)
 
-Don't touch the lockfile. Add an env-var gate in `entrypoint.sh` `install_optional_skills()` (copy the `ECC_ENABLED`/`SUPERPOWERS_ENABLED` block), document the flag in root `AGENTS.md` Module Toggle table + `docs/guides/configuration.md`. Requires network at container start.
+Don't touch the lockfile. Add an env-var gate in `entrypoint.py` `install_optional_skills()` (copy the `ECC_ENABLED`/`SUPERPOWERS_ENABLED` block), document the flag in root `AGENTS.md` Module Toggle table + `docs/guides/configuration.md`. Requires network at container start.
 
 ## Anti-Patterns (build-specific)
 
 - **Don't** edit `skills-lock.json` by hand — regenerate it via the skills.sh CLI
 - **Don't** put plugins in `opencode.jsonc` — use `opencode.json`
-- **Don't** run entrypoint.sh at build time (RUN) — it's the ENTRYPOINT, runs at container start
+- **Don't** run entrypoint.py at build time (RUN) — it's the ENTRYPOINT, runs at container start
 - **Don't** use `:latest` on final FROM — validate.sh hard-fails this (builder stage `:latest` OK)
 - **Don't** change base image without updating validate.sh:197 pattern AND AGENTS.md
 - **Don't** bump `.opencode-version` without updating `.opencode-checksums` — use `scripts/bump-version.sh`
@@ -167,8 +168,8 @@ scripts/bump-version.sh ────┘   atomic updater (GitHub Releases API)
 ## Quick Reference
 
 ```bash
-# Verify entrypoint is sourceable (for tests)
-bash -c 'source build/entrypoint.sh && type derive_config_dir'
+# Verify entrypoint is importable (for tests)
+python3 -c "import importlib.util as i; s=i.spec_from_file_location('e','build/entrypoint.py'); m=i.module_from_spec(s); s.loader.exec_module(m); print(m.derive_config_dir('/a/b/c.json'))"
 
 # Enable runtime opt-in skills (ECC + superpowers)
 ECC_ENABLED=1 SUPERPOWERS_ENABLED=1 \
