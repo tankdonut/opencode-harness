@@ -111,7 +111,7 @@ WORKDIR /workspace
 COPY --chown=opencode:opencode .opencode/ /opencode/default/
 COPY etc/ /etc/
 COPY --chown=opencode:opencode skills-lock.json /opencode/default/skills-lock.json
-COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY --chmod=755 entrypoint.py /usr/local/bin/entrypoint.py
 
 # Environment configuration
 ENV PATH="/vendor/bin:${PATH}" \
@@ -126,10 +126,10 @@ ENV PATH="/vendor/bin:${PATH}" \
 USER 1001
 
 # Install baseline skills (oh-my-openagent) from skills-lock.json
-# ECC and superpowers skills are installed at runtime via entrypoint.sh (opt-in)
+# ECC and superpowers skills are installed at runtime via entrypoint.py (opt-in)
 WORKDIR /opencode/default
 RUN npx --yes skills@1.5.13 experimental_install --agent opencode --copy -y
 WORKDIR /workspace
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.py"]
 CMD ["/bin/bash"]
