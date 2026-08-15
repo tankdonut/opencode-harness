@@ -184,5 +184,101 @@ class ExecContainerCommandTest(unittest.TestCase):
         self.assertEqual(code, 127)
 
 
+DEFAULT_VARIANT = '{"opencodeProvider": "zai-coding-plan", "opencodeModel": "glm-5-turbo"}'
+WEB_VARIANT = (
+    '{"opencodeProvider": "zai-coding-plan", "opencodeModel": "glm-5-turbo",'
+    ' "webServerHost": "0.0.0.0", "webServerApiToken": "env://OPENCODE_MEM_WEB_TOKEN"}'
+)
+
+
+class CopyMemConfigTest(unittest.TestCase):
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.tmp = Path(tmp.name)
+        self.source = self.tmp / "opencode-mem.jsonc"
+        self.web_source = self.tmp / "opencode-mem.web.jsonc"
+        self.target = self.tmp / "config" / "opencode" / "opencode-mem.jsonc"
+
+        env_patch = mock.patch.dict(os.environ)
+        env_patch.start()
+        self.addCleanup(env_patch.stop)
+        for var in ("OPENCODE_BOOTSTRAP_FORCE", "OPENCODE_MEM_WEB_EXPOSED", "OPENCODE_MEM_WEB_TOKEN"):
+            os.environ.pop(var, None)
+
+    def _patch_paths(self):
+        return mock.patch.multiple(
+            entrypoint,
+            DEFAULT_MEM_CONFIG_SOURCE=str(self.source),
+            DEFAULT_MEM_WEB_CONFIG_SOURCE=str(self.web_source),
+            MEM_CONFIG_PATH=str(self.target),
+        )
+
+    def test_seeds_baked_config_into_global_config_dir(self) -> None:
+        self.source.write_text(DEFAULT_VARIANT, encoding="utf-8")
+        with self._patch_paths():
+            self.assertTrue(entrypoint.copy_mem_config())
+        self.assertEqual(self.target.read_text(encoding="utf-8"), DEFAULT_VARIANT)
+
+    def test_soft_skips_when_source_missing(self) -> None:
+        with mock.patch.object(entrypoint, "DEFAULT_MEM_CONFIG_SOURCE", "/nonexistent/opencode-mem.jsonc"):
+            self.assertTrue(entrypoint.copy_mem_config())
+
+    def test_preserves_user_customization_without_force(self) -> None:
+        self.source.write_text(DEFAULT_VARIANT, encoding="utf-8")
+        self.target.parent.mkdir(parents=True)
+        user_edit = '{"opencodeProvider": "anthropic"}'
+        self.target.write_text(user_edit, encoding="utf-8")
+
+        with self._patch_paths():
+            self.assertTrue(entrypoint.copy_mem_config())
+        self.assertEqual(self.target.read_text(encoding="utf-8"), user_edit)
+
+    def test_seeds_web_variant_when_exposed_with_token(self) -> None:
+        self.source.write_text(DEFAULT_VARIANT, encoding="utf-8")
+        self.web_source.write_text(WEB_VARIANT, encoding="utf-8")
+        os.environ["OPENCODE_MEM_WEB_EXPOSED"] = "1"
+        os.environ["OPENCODE_MEM_WEB_TOKEN"] = "secret-token"
+
+        with self._patch_paths():
+            self.assertTrue(entrypoint.copy_mem_config())
+        self.assertEqual(self.target.read_text(encoding="utf-8"), WEB_VARIANT)
+
+    def test_swaps_untouched_default_variant_to_web(self) -> None:
+        # Given: an existing HOME volume seeded with the default variant earlier
+        self.source.write_text(DEFAULT_VARIANT, encoding="utf-8")
+        self.web_source.write_text(WEB_VARIANT, encoding="utf-8")
+        self.target.parent.mkdir(parents=True)
+        self.target.write_text(DEFAULT_VARIANT, encoding="utf-8")
+        os.environ["OPENCODE_MEM_WEB_EXPOSED"] = "1"
+        os.environ["OPENCODE_MEM_WEB_TOKEN"] = "secret-token"
+
+        with self._patch_paths():
+            self.assertTrue(entrypoint.copy_mem_config())
+        self.assertEqual(self.target.read_text(encoding="utf-8"), WEB_VARIANT)
+
+    def test_stays_default_when_exposed_without_token(self) -> None:
+        self.source.write_text(DEFAULT_VARIANT, encoding="utf-8")
+        self.web_source.write_text(WEB_VARIANT, encoding="utf-8")
+        os.environ["OPENCODE_MEM_WEB_EXPOSED"] = "1"
+
+        with self._patch_paths():
+            self.assertTrue(entrypoint.copy_mem_config())
+        self.assertEqual(self.target.read_text(encoding="utf-8"), DEFAULT_VARIANT)
+
+    def test_preserves_customized_config_when_exposed(self) -> None:
+        self.source.write_text(DEFAULT_VARIANT, encoding="utf-8")
+        self.web_source.write_text(WEB_VARIANT, encoding="utf-8")
+        self.target.parent.mkdir(parents=True)
+        user_edit = '{"opencodeProvider": "anthropic"}'
+        self.target.write_text(user_edit, encoding="utf-8")
+        os.environ["OPENCODE_MEM_WEB_EXPOSED"] = "1"
+        os.environ["OPENCODE_MEM_WEB_TOKEN"] = "secret-token"
+
+        with self._patch_paths():
+            self.assertTrue(entrypoint.copy_mem_config())
+        self.assertEqual(self.target.read_text(encoding="utf-8"), user_edit)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

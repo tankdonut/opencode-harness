@@ -62,12 +62,16 @@ OPENCODE_THEME: Final = os.environ.get("OPENCODE_THEME", "ayu-dark")
 # Writable config destination (in HOME — survives bind-mount shadowing)
 HOME_CONFIG_DIR: Final = f"{HOME}/.opencode"
 HOME_CONFIG_PATH: Final = f"{HOME_CONFIG_DIR}/opencode.json"
+MEM_CONFIG_PATH: Final = f"{HOME}/.config/opencode/opencode-mem.jsonc"
 VENDOR_BIN: Final = "/vendor/bin"
 # Read-only image defaults (source for bootstrap_config copy)
 DEFAULT_CONFIG_SOURCE: Final = "/opencode/default/opencode.json"
 DEFAULT_TUI_SOURCE: Final = "/opencode/default/tui.json"
 DEFAULT_THEMES_SOURCE: Final = "/opencode/default/themes"
 DEFAULT_SKILLS_SOURCE: Final = "/opencode/default/.agents/skills"
+DEFAULT_MEM_CONFIG_SOURCE: Final = "/opencode/default/opencode-mem.jsonc"
+DEFAULT_MEM_WEB_CONFIG_SOURCE: Final = "/opencode/default/opencode-mem.web.jsonc"
+MEM_WEB_TOKEN_ENV: Final = "OPENCODE_MEM_WEB_TOKEN"
 SKILLS_CLI_VERSION: Final = "1.5.13"
 SKILLS_INSTALL_CWD: Final = "/opencode/default"
 REQUIRED_COMMANDS: Final = ("git", "node", "npm", "curl", "jq", "python3", "pip3", "yq")
@@ -223,6 +227,70 @@ def bootstrap_config() -> bool:
         return False
 
     log_success("Configuration bootstrap complete")
+    return True
+
+
+def _read_text_or_empty(path: str) -> str:
+    try:
+        return Path(path).read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
+
+def _select_mem_config_source() -> str:
+    """Baked opencode-mem config variant to seed: web-exposed when safely enabled."""
+    if not _enabled("OPENCODE_MEM_WEB_EXPOSED"):
+        return DEFAULT_MEM_CONFIG_SOURCE
+    if Path(DEFAULT_MEM_WEB_CONFIG_SOURCE).is_file() and os.environ.get(MEM_WEB_TOKEN_ENV, ""):
+        return DEFAULT_MEM_WEB_CONFIG_SOURCE
+    log_warn(
+        "OPENCODE_MEM_WEB_EXPOSED=1 needs OPENCODE_MEM_WEB_TOKEN set; "
+        "web UI stays loopback-only this run"
+    )
+    return DEFAULT_MEM_CONFIG_SOURCE
+
+
+def copy_mem_config() -> bool:
+    """Seed opencode-mem's config at ~/.config/opencode/opencode-mem.jsonc.
+
+    The plugin reads its config from the global opencode config dir and, when
+    the file is absent, writes a template with auto-capture left unconfigured.
+    Seeding before first start wires auto-capture to the container's
+    zai-coding-plan auth; without a provider key the plugin degrades
+    gracefully (capture skipped, storage/search keep working).
+
+    An existing config is preserved unless OPENCODE_BOOTSTRAP_FORCE=1 — except
+    one still byte-identical to a baked variant (never user-edited), which is
+    swapped to the wanted variant so toggling OPENCODE_MEM_WEB_EXPOSED takes
+    effect on existing HOME volumes.
+    """
+    source = _select_mem_config_source()
+    if not Path(source).is_file():
+        log_warn(f"opencode-mem config not found at {source}, skipping")
+        return True
+
+    existing = _read_text_or_empty(MEM_CONFIG_PATH)
+    force = os.environ.get("OPENCODE_BOOTSTRAP_FORCE", "0") == "1"
+    if existing and not force:
+        if existing == _read_text_or_empty(source):
+            return True
+        other = (
+            DEFAULT_MEM_CONFIG_SOURCE
+            if source == DEFAULT_MEM_WEB_CONFIG_SOURCE
+            else DEFAULT_MEM_WEB_CONFIG_SOURCE
+        )
+        if existing != _read_text_or_empty(other):
+            log_warn(f"Config exists at {MEM_CONFIG_PATH}, skipping (set OPENCODE_BOOTSTRAP_FORCE=1 to overwrite)")
+            return True
+        # untouched seed of the other variant — swap to the wanted one
+
+    target_path = Path(MEM_CONFIG_PATH)
+    try:
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target_path)
+    except OSError as exc:
+        log_error(f"copy_mem_config: cannot seed {target_path} from {source} ({exc})")
+        return False
     return True
 
 
@@ -512,6 +580,9 @@ def main(argv: Sequence[str]) -> int:
         _require(validate_environment(), "environment validation")
         _require(verify_opencode(), "opencode verification")
         _require(bootstrap_config(), "config bootstrap")
+
+        if not copy_mem_config():
+            log_warn("opencode-mem config bootstrap failed")
 
         if not sync_skills():
             log_warn("Skills sync failed")
