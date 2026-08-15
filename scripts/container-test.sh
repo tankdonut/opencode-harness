@@ -362,7 +362,7 @@ test_entrypoint() {
     log_section "Testing Entrypoint"
 
     # Check entrypoint script exists
-    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -x /usr/local/bin/entrypoint.sh; then
+    if ${CONTAINER_RUNTIME} run --rm "${IMAGE_NAME}" test -x /usr/local/bin/entrypoint.py; then
         log_pass "Entrypoint script is executable"
     else
         log_fail "Entrypoint script not executable or missing"

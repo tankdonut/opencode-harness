@@ -112,7 +112,7 @@ validate_permissions() {
 
     local executable_scripts=(
         "${PROJECT_ROOT}/scripts/local-setup.sh"
-        "${PROJECT_ROOT}/build/entrypoint.sh"
+        "${PROJECT_ROOT}/build/entrypoint.py"
     )
 
     for script in "${executable_scripts[@]}"; do
@@ -284,7 +284,7 @@ validate_structure() {
         "build/etc/opencode/opencode.jsonc"
         "build/skills-lock.json"
         "scripts/local-setup.sh"
-        "build/entrypoint.sh"
+        "build/entrypoint.py"
         "README.md"
         "AGENTS.md"
     )
