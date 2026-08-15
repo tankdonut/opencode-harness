@@ -44,7 +44,7 @@ CI forces docker (CONTAINER_CMD=docker, pre-installed on runners)
 ```
 check_tools          # jq, git present
 validate_json        # opencode.json valid + $schema + plugin[]
-validate_permissions # local-setup.sh + entrypoint.sh executable (--fix auto-chmods)
+validate_permissions # local-setup.sh + entrypoint.py executable (--fix auto-chmods)
 validate_skills_lock # skills-lock.json exists, valid JSON, has skills
 validate_containerfile  # regex greps: ubuntu:26.04, @sha256:, sha256sum -c, USER opencode, etc.
 validate_checksums   # format ^[0-9a-f]{64}\ \ filename, both arches present
@@ -135,7 +135,7 @@ CI consumes centralized actions from [`tankdonut/github-actions@v1`](https://git
 
 1. **Runtime mismatch**: local prefers podman, CI uses docker — `apply_labels` silently fails in CI
 2. **container-test.sh is slow**: ~30 fresh container starts per run (no layer reuse)
-3. **No tests for validate.sh/build.sh/bump-version.sh/local-setup.sh themselves** — only container-test.sh and test_bootstrap.sh exist
+3. **No tests for validate.sh/build.sh/bump-version.sh/local-setup.sh themselves** — only container-test.sh and test_bootstrap.py exist
 
 ## Quick Reference
 

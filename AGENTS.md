@@ -30,7 +30,7 @@ opencoder/
 │   ├── .opencode-version       # Pinned OpenCode version (single source of truth)
 │   ├── .opencode-checksums     # SHA256 checksums (x64 + arm64 tarballs)
 │   ├── Containerfile           # Multi-stage image def: tools → ubuntu:26.04 → runtime
-│   ├── entrypoint.sh           # Container ENTRYPOINT (485L, real bootstrap logic)
+│   ├── entrypoint.py           # Container ENTRYPOINT (Python, real bootstrap logic)
 │   ├── .opencode/              # PROJECT-LEVEL config (plugins only, strict JSON)
 │   │   ├── opencode.json       # OpenCode plugin list (npm-pinned)
 │   │   ├── dcp.json            # Dynamic Context Pruning plugin config (50%/40%)
@@ -54,7 +54,7 @@ opencoder/
 │   ├── opencode-sandbox.sh     # Linux sandbox wrapper: bwrap / gVisor / nspawn (392L)
 │   └── validate.sh             # Pre-build validation (395L, CI-run)
 ├── tests/                     # Unit tests (see tests/AGENTS.md)
-│   └── test_bootstrap.sh      # TDD tests for entrypoint helpers (457L, NOT in CI)
+│   └── test_bootstrap.py      # Unit tests for entrypoint helpers (NOT in CI)
 ├── docs/guides/               # User-facing markdown guides
 │   ├── configuration.md        # Config reference + module toggle env vars
 │   ├── installation.md         # Agent-optimized install guide
@@ -367,7 +367,7 @@ These match the same 7-day policy. Do not weaken one without weakening all three
 - **Modify skills-lock.json entries by hand** - use `npx skills` CLI then validate
 - **Remove error handling** from shell scripts (`set -euo pipefail`)
 - **Commit `node_modules/` or `vendor/` directories**
-- **Commit secrets** - No API keys, tokens, passwords in Containerfile or entrypoint.sh
+- **Commit secrets** - No API keys, tokens, passwords in Containerfile or entrypoint.py
 - **Use `latest` tags** - Always pin versions (`ubuntu:26.04` not `ubuntu:latest`)
 - **Run as root** - Security risk, creates permission issues
 - **Install unnecessary tools** - Vim, nano, curl (unless required) bloat the image
@@ -420,7 +420,7 @@ Baseline skills are baked into the image at build time via `build/skills-lock.js
    git commit -m "feat(skills): add <skill-name> to baseline"
    ```
 
-**For large/optional collections** (network-required, shouldn't bloat the image): don't add to the lockfile. Instead wire a runtime opt-in env var in `build/entrypoint.sh` `install_optional_skills()` — copy the `ECC_ENABLED` / `SUPERPOWERS_ENABLED` blocks as a template, document the new flag in the Module Toggle table below and `docs/guides/configuration.md`, then commit `entrypoint.sh` + docs.
+**For large/optional collections** (network-required, shouldn't bloat the image): don't add to the lockfile. Instead wire a runtime opt-in env var in `build/entrypoint.py` `install_optional_skills()` — copy the `ECC_ENABLED` / `SUPERPOWERS_ENABLED` blocks as a template, document the new flag in the Module Toggle table below and `docs/guides/configuration.md`, then commit `entrypoint.py` + docs.
 
 ### Updating OpenCode Version
 
@@ -440,7 +440,7 @@ Baseline skills are baked into the image at build time via `build/skills-lock.js
 
 ### Updating Container Bootstrap
 
-1. Edit `build/entrypoint.sh` with new setup steps
+1. Edit `build/entrypoint.py` with new setup steps
 2. Update `build/Containerfile` to call bootstrap script
 3. Build test: `./scripts/build.sh --tag test --no-cache`
 4. Run test: `podman run -it --rm test bash -c "opencode --version"`
@@ -475,7 +475,7 @@ Before committing container changes:
 
 - [ ] All base images use pinned tags (no `latest`)
 - [ ] Container runs as non-root user
-- [ ] No secrets in build/Containerfile, build/entrypoint.sh, or ENV vars
+- [ ] No secrets in build/Containerfile, build/entrypoint.py, or ENV vars
 - [ ] Apt cache cleaned (`rm -rf /var/lib/apt/lists/*`)
 - [ ] Unnecessary packages removed
 - [ ] Vulnerability scan passed (`podman image scan`)
@@ -542,7 +542,7 @@ jq . build/.opencode/opencode.json
 ```bash
 # Symptom: Container starts but OpenCode not configured
 # Solution: Verify script is executable and ENTRYPOINT is set
-COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint
+COPY --chmod=755 entrypoint.py /usr/local/bin/entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 ```
 

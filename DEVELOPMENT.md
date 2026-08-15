@@ -57,7 +57,7 @@ Run validation and container tests locally before pushing:
 
 # Or manually
 jq . build/.opencode/opencode.json
-shellcheck build/entrypoint.sh scripts/*.sh
+shellcheck scripts/*.sh
 ```
 
 ## Git Workflow
