@@ -9,7 +9,7 @@ The **sole container build context** for `podman/docker build`. Everything neede
 ## File Inventory
 
 | Path | Role |
-|------|------|
+| ------ | ------ |
 | `Containerfile` (132L) | Multi-stage image definition: `tools` stage → `ubuntu:26.04` runtime |
 | `entrypoint.py` | Container ENTRYPOINT (Python, stdlib-only) — the real bootstrap logic (runs at `podman run`, NOT build time) |
 | `.opencode-version` | Single source of truth for OpenCode release (currently `1.17.6`) |
@@ -18,6 +18,8 @@ The **sole container build context** for `podman/docker build`. Everything neede
 | `.opencode/package.json` + `bun.lock` | JS-tooling artifacts for theme/plugin deps (gitignored from build context, NOT shipped) |
 | `.opencode/opencode.json` | **Plugins** (project-level, strict JSON) |
 | `.opencode/dcp.json` | Dynamic Context Pruning config (compress at 50%, floor 40%) |
+| `.opencode/opencode-mem.jsonc` | opencode-mem plugin default — entrypoint seeds it to `~/.config/opencode/` so auto-capture works out of the box |
+| `.opencode/opencode-mem.web.jsonc` | web-exposed variant (0.0.0.0 + `env://OPENCODE_MEM_WEB_TOKEN`) — seeded instead when `OPENCODE_MEM_WEB_EXPOSED=1` + token are set |
 | `.opencode/tui.json` + `themes/` | TUI theming (ayu-dark default) |
 | `etc/opencode/opencode.jsonc` | **Runtime behavior** (container-level, JSONC with comments) |
 | `etc/npmrc` | Supply-chain: `min-release-age=7`, `ignore-scripts=true` |
@@ -38,6 +40,7 @@ The **sole container build context** for `podman/docker build`. Everything neede
 ## The `COPY etc/ /etc/` Convention
 
 Containerfile L107 copies the **entire** `etc/` tree to `/etc/` wholesale:
+
 - `etc/opencode/opencode.jsonc` → `/etc/opencode/opencode.jsonc`
 - `etc/npmrc` → `/etc/npmrc`
 - `etc/uv/uv.toml` → `/etc/uv/uv.toml`
@@ -67,16 +70,19 @@ CMD ["/bin/bash"]
 ## entrypoint.py — Importable + Executable Bootstrap
 
 ### `if __name__ == "__main__"` guard (bottom of file)
+
 - **Executed** as container ENTRYPOINT → runs `main()`
 - **Imported** by `tests/test_bootstrap.py` (via `importlib.util.spec_from_file_location`) → helper functions only, no bootstrap side effects
 
 Stdlib only — the image ships python3 with no pip packages. Fatal steps raise `BootstrapError` (caught in `main`, exit 1); soft steps (skills sync, OMO install, optional skills) return `False` and only warn. All logging goes to stderr; stdout stays clean. Trailing argv is `os.execv`'d as the container command.
 
 ### Bootstrap Flow (main)
+
 ```
 validate_environment  → check git/node/npm/curl/jq/python3/pip3/yq, PATH
 verify_opencode       → opencode --version vs /etc/opencode-version
 bootstrap_config      → copy_config + copy_theme_config (defaults from /opencode/default/ → writable $HOME/.opencode/)
+copy_mem_config       → seed opencode-mem.jsonc → $HOME/.config/opencode/ (plugin's global discovery path; soft-fail)
 sync_skills           → symlink $HOME/.agents/skills → /opencode/default/.agents/skills/
 validate_config       → jq empty + plugin count > 0
 install_oh_my_opencode → bunx oh-my-opencode install (7 flags: OMO_CLAUDE/OMO_GEMINI/OMO_COPILOT/OMO_OPENAI/OMO_OPENCODE_GO/OMO_OPENCODE_ZEN/OMO_ZAI_CODING_PLAN; OMO_FORCE=yes forces) (warns on failure, non-fatal)
@@ -87,17 +93,21 @@ exec "$@"             → hand off to CMD (/bin/bash) or user args
 ```
 
 ### Helper Functions
+
 - `derive_config_dir` — resolves config destination based on workspace state
 - `create_config_dir` — mkdir -p with ownership
 - `copy_config` — `cp -n` (no-clobber) unless `OPENCODE_BOOTSTRAP_FORCE=1`
 - `copy_theme_config` — TUI theme setup
+- `copy_mem_config` — seeds `opencode-mem.jsonc` into `~/.config/opencode/` before first start (plugin would otherwise write a template with auto-capture unconfigured); picks the web-exposed variant when `OPENCODE_MEM_WEB_EXPOSED=1` + `OPENCODE_MEM_WEB_TOKEN` are set, swapping an untouched seed so the toggle works on existing volumes
 - `sync_skills` — creates symlink from `$HOME/.agents/skills` to `/opencode/default/.agents/skills/` (keeps skills available in HOME without polluting the bind-mounted workspace)
 - `install_optional_skills` — runtime installer for ECC/superpowers via skills.sh CLI (gated by `ECC_ENABLED` / `SUPERPOWERS_ENABLED`)
 
 ### Force Flag
+
 `OPENCODE_BOOTSTRAP_FORCE=1` overwrites existing config. Absent or `0` preserves (uses `cp -n`).
 
 ### Known Tricky Logic
+
 1. **Line 328**: `${install_cmd} 2>&2 >&2` — unusual redirect, sends all output to stderr (keeps stdout clean)
 2. **Line 149/187**: `cp -n` / `cp -rn` — GNU cp extensions; won't work on macOS bash 3.2
 3. **Line 79/77**: `${flag_value,,}` (lowercase) and `${!flag_name:-1}` (indirect expansion) — bash 4+ required
@@ -111,7 +121,7 @@ Skills ship through two distinct mechanisms, layered on top of the npm plugin lo
 **Do not conflate these:**
 
 | Mechanism | What it does | Source |
-|-----------|-------------|--------|
+| ----------- | ------------- | -------- |
 | **OpenCode plugin loader** | Fetches npm packages at runtime | `.opencode/opencode.json` plugin[] |
 | **Build-time skills (baseline)** | `oh-my-openagent` skills baked into the image via `npx skills experimental_install` | `skills-lock.json` → `/opencode/default/.agents/skills/` |
 | **Runtime skills (opt-in)** | ECC / superpowers skills fetched at container start | entrypoint `install_optional_skills` via `npx skills add` |
@@ -120,7 +130,7 @@ Skills ship through two distinct mechanisms, layered on top of the npm plugin lo
 ### Plugin ↔ Skill Source Mapping (LOOSE)
 
 | npm package | Skill source | Relationship |
-|-------------|-------------|--------------|
+| ------------- | ------------- | -------------- |
 | `@tarquinen/opencode-dcp@3.1.13` | — | npm-only |
 | `cc-safety-net@1.0.6` | — | npm-only |
 | `oh-my-openagent@4.12.0` | `code-yeongyu/oh-my-openagent` | Name overlaps; skills ship at build time, npm is the plugin |

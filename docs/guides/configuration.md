@@ -130,13 +130,51 @@ jq . build/etc/opencode/opencode.jsonc
 The container splits its filesystem into two distinct directories with separate roles. Understanding this split prevents the most common container deployment mistakes.
 
 | Path | Mount Type | Contents |
-|------|-----------|----------|
+| ------ | ----------- | ---------- |
 | `/home/opencode` | Named volume (container HOME) | Bun JIT cache, sessions, auth.json, `.opencode/` config+themes, `.agents/skills` symlink, oh-my-opencode config |
 | `/workspace` | Bind mount (host project) | Your source code, checked-out repos, working files |
 
 **Why the split exists:** Bun standalone binaries need a writable HOME directory for JIT compilation and cache writes. When `/workspace` was the container HOME, bind-mounting a host directory there would shadow the HOME and break those writes (host-owned UIDs differ from the container's `opencode` user). The split ensures container state never depends on host mount permissions.
 
 The entrypoint copies config defaults (opencode.json, tui.json, themes/) from the read-only image source (`/opencode/default/`) into the writable `$HOME/.opencode/` at container start, then exports `OPENCODE_CONFIG` to point there. This means `oh-my-opencode install` can write its config alongside, and user customizations persist in the named volume across container restarts. Skills are exposed through a symlink: `$HOME/.agents/skills` points to `/opencode/default/.agents/skills/`. Nothing is written to the bind-mounted `/workspace`.
+
+## Memory Plugin (opencode-mem)
+
+The `opencode-mem` plugin ships enabled and works out of the box. The entrypoint seeds its config to `~/.config/opencode/opencode-mem.jsonc` from the image default (`build/.opencode/opencode-mem.jsonc`) on first start; edit the HOME copy to customize (it persists in the named volume).
+
+What works with zero configuration:
+
+- **Memory storage, search, and profile injection** — local embeddings, no API needed. The first memory operation downloads the embedding model (network required).
+
+What needs `ZHIPU_API_KEY` (the container's default provider auth):
+
+- **Auto-capture** (background session summaries) and **user-profile learning** run through the `zai-coding-plan` provider via the seeded config. Without the key they are skipped with warnings; everything else keeps working.
+
+Customizing the capture model or using another authenticated provider:
+
+```jsonc
+// ~/.config/opencode/opencode-mem.jsonc (inside the container)
+"opencodeProvider": "anthropic",   // any provider from `opencode providers list`
+"opencodeModel": "claude-haiku-4-5-20251001"
+```
+
+The memory database persists at `~/.opencode-mem/data` (HOME named volume). The web UI (memory explorer) listens on container-internal loopback `127.0.0.1:4747` by default — unreachable through port publishing. To expose it:
+
+```bash
+# compose: set in .env, then run with published ports
+OPENCODE_MEM_WEB_EXPOSED=1
+OPENCODE_MEM_WEB_TOKEN=$(openssl rand -hex 32)   # required — protects the web API
+docker compose run --rm --service-ports opencode   # compose run needs --service-ports
+
+# plain podman/docker
+podman run -it --rm \
+  -e OPENCODE_MEM_WEB_EXPOSED=1 \
+  -e OPENCODE_MEM_WEB_TOKEN=<token> \
+  -p 127.0.0.1:4747:4747 \
+  opencoder
+```
+
+The entrypoint then seeds a config variant binding `0.0.0.0` with the API token resolved from the environment (never written to a file). The plugin refuses non-loopback binds without a token, so exposure without `OPENCODE_MEM_WEB_TOKEN` falls back to loopback-only with a warning. `OPENCODE_BOOTSTRAP_FORCE=1` re-seeds the config from the image default, overwriting edits; without it, an existing config you edited is preserved (a still-untouched seeded config is swapped when you toggle exposure).
 
 ## Container Module Control
 

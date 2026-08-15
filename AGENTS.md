@@ -34,6 +34,7 @@ opencoder/
 │   ├── .opencode/              # PROJECT-LEVEL config (plugins only, strict JSON)
 │   │   ├── opencode.json       # OpenCode plugin list (npm-pinned)
 │   │   ├── dcp.json            # Dynamic Context Pruning plugin config (50%/40%)
+│   │   ├── opencode-mem.jsonc  # opencode-mem plugin default (auto-capture via zai-coding-plan)
 │   │   ├── tui.json            # TUI theme configuration
 │   │   └── themes/             # Custom theme files
 │   │       ├── ayu-dark.json
@@ -304,7 +305,7 @@ The entrypoint selectively enables each optional skill collection at container s
 
 Additionally, `OMO_CLAUDE` / `OMO_GEMINI` / `OMO_COPILOT` / `OMO_OPENAI` / `OMO_OPENCODE_GO` / `OMO_OPENCODE_ZEN` / `OMO_ZAI_CODING_PLAN` (values: `yes`/`no`/`max20`) pass **subscription toggles** to `bunx oh-my-opencode install` at runtime — they control which LLM models are added to agent fallback chains, NOT authentication. `OMO_FORCE=yes` forces reinstall.
 
-> **Compose users:** `compose.yml` surfaces all of the above env vars (plus `ZHIPU_API_KEY`, `OPENCODE_THEME`, bootstrap force, and telemetry flags) through `.env`. Copy `.env.example` to `.env` and edit values there instead of passing `-e` flags on every run. See `docs/guides/usage.md` for the compose workflow.
+> **Compose users:** `compose.yml` surfaces all of the above env vars (plus `ZHIPU_API_KEY`, `OPENCODE_THEME`, bootstrap force, telemetry flags, and the opencode-mem web UI toggles) through `.env`. Copy `.env.example` to `.env` and edit values there instead of passing `-e` flags on every run. See `docs/guides/usage.md` for the compose workflow.
 
 ### Provider Authentication
 
@@ -312,14 +313,15 @@ OpenCode resolves provider credentials in priority order: **environment variable
 
 | Env var | Provider | Purpose |
 |---------|----------|---------|
-| `ZHIPU_API_KEY` | `zai-coding-plan` | API key for ZAI Coding Plan subscription (GLM-4.5, GLM-5.x models). Base URL is pinned in `opencode.jsonc` as a workaround for [opencode#11106](https://github.com/anomalyco/opencode/issues/11106). |
+| `ZHIPU_API_KEY` | `zai-coding-plan` | API key for ZAI Coding Plan subscription (GLM-4.5, GLM-5.x models). Base URL is pinned in `opencode.jsonc` as a workaround for [opencode#11106](https://github.com/anomalyco/opencode/issues/11106). Also powers `opencode-mem` auto-capture out of the box (see `docs/guides/configuration.md`). |
 
 ### Runtime Environment Variables
 
 | Env var | Effect |
-|---------|--------|
+| --------- | -------- |
 | `OPENCODE_THEME` | Defaults to `ayu-dark` (see `build/.opencode/themes/`) |
 | `OPENCODE_BOOTSTRAP_FORCE` | `1` overwrites existing config at container start (`cp` vs `cp -n`) |
+| `OPENCODE_MEM_WEB_EXPOSED` | `1` binds the opencode-mem web UI to `0.0.0.0` so a published port reaches it. Requires `OPENCODE_MEM_WEB_TOKEN` (API token; without it the UI stays loopback-only). Compose publishes `127.0.0.1:4747` by default |
 | `OMO_SEND_ANONYMOUS_TELEMETRY=0` | Disables OMO telemetry collection |
 | `OMO_DISABLE_POSTHOG=1` | Disables PostHog analytics in OMO |
 

@@ -44,7 +44,7 @@ podman run --rm opencoder opencode --help
 The project ships a `compose.yml` and `.env.example` at the root for repeatable container runs without memorizing flags. Compose manages two volumes behind the scenes:
 
 - `/workspace` binds your project directory (read-write)
-- `/home/opencode` is a named volume for container state (Bun cache, sessions, auth.json), persisted across runs
+- `/home/opencode` is a named volume for container state (Bun cache, sessions, auth.json, opencode-mem data), persisted across runs
 
 **Quick start:**
 
@@ -73,6 +73,17 @@ docker compose run --rm opencode
 ```
 
 Every environment variable documented in the [Configuration Guide](configuration.md) (provider keys, skill toggles, subscription flags, telemetry) can be set in `.env` and compose will pass it through automatically. The `.env` file is gitignored; `.env.example` is safe to commit.
+
+**opencode-mem web UI:** `compose run` publishes service ports only with `--service-ports` — plain `docker compose run --rm opencode` will not expose the web UI even when enabled. To reach it:
+
+```bash
+# 1. In .env: OPENCODE_MEM_WEB_EXPOSED=1 and OPENCODE_MEM_WEB_TOKEN=<token>
+# 2. Run with service ports
+docker compose run --rm --service-ports opencode
+# 3. Browse http://127.0.0.1:4747
+```
+
+See the [Configuration Guide](configuration.md) for the full exposure flow (token requirements, podman equivalent).
 
 ## Development Workflows
 
