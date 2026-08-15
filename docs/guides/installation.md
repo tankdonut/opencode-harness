@@ -76,7 +76,7 @@ podman run -it --rm opencoder bash -c "opencode --version && echo 'Success!'"
 opencoder/
 ├── build/                     # Container build files
 │   ├── Containerfile          # Container build definition
-│   ├── entrypoint.sh          # Container entrypoint
+│   ├── entrypoint.py          # Container entrypoint
 │   ├── .opencode-version      # OpenCode version pin
 │   ├── .opencode-checksums    # SHA256 checksums
 │   ├── .opencode/             # OpenCode configuration

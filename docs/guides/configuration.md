@@ -140,7 +140,7 @@ The entrypoint copies config defaults (opencode.json, tui.json, themes/) from th
 
 ## Container Module Control
 
-The entrypoint script (`build/entrypoint.sh`) supports environment variables to install optional skill collections at container startup. `oh-my-openagent` is always installed at build time; the others default to **disabled** and require network access at runtime.
+The entrypoint script (`build/entrypoint.py`) supports environment variables to install optional skill collections at container startup. `oh-my-openagent` is always installed at build time; the others default to **disabled** and require network access at runtime.
 
 | Variable | Default | Controls |
 |----------|---------|----------|
