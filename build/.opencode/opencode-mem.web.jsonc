@@ -1,0 +1,20 @@
+{
+  // opencode-mem web-exposed variant, seeded INSTEAD of opencode-mem.jsonc when
+  // OPENCODE_MEM_WEB_EXPOSED=1 and OPENCODE_MEM_WEB_TOKEN are set at container
+  // start (entrypoint mediates; see copy_mem_config).
+  //
+  // Same memory behavior as opencode-mem.jsonc, plus:
+  //   - Web UI binds 0.0.0.0 so a published port can reach it (the default
+  //     loopback bind is unreachable through docker/podman port mapping).
+  //   - API token resolved from the container environment — no secret in any
+  //     file. The plugin rejects non-loopback binds without a token.
+  //
+  // Browse: compose publishes 127.0.0.1:4747 by default; the API requires
+  // "Authorization: Bearer <token>" (or X-Opencode-Mem-Token).
+
+  "opencodeProvider": "zai-coding-plan",
+  "opencodeModel": "glm-5-turbo",
+
+  "webServerHost": "0.0.0.0",
+  "webServerApiToken": "env://OPENCODE_MEM_WEB_TOKEN"
+}

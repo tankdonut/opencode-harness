@@ -1,0 +1,21 @@
+{
+  // Container default for the opencode-mem plugin (memory + user-profile).
+  // The entrypoint copies this to ~/.config/opencode/opencode-mem.jsonc on
+  // first start (OPENCODE_BOOTSTRAP_FORCE=1 overwrites; edit the HOME copy
+  // to customize — it persists in the HOME volume).
+  //
+  // Out of the box:
+  //   - Memory storage, search, and profile injection need no configuration.
+  //   - Auto-capture and user-profile learning ride the container's
+  //     zai-coding-plan auth: set ZHIPU_API_KEY and they work. Without a
+  //     key they are skipped with warnings; everything else keeps working.
+  //
+  // Notes:
+  //   - Memory DB persists at ~/.opencode-mem/data (HOME volume).
+  //   - Web UI listens on container loopback (127.0.0.1:4747); expose it
+  //     with `podman run -p 127.0.0.1:4747:4747 ...`.
+  //   - The first memory operation downloads the embedding model (network).
+
+  "opencodeProvider": "zai-coding-plan",
+  "opencodeModel": "glm-5-turbo"
+}

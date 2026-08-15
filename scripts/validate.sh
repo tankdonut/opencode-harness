@@ -280,6 +280,8 @@ validate_structure() {
     local required_files=(
         "build/Containerfile"
         "build/.opencode/opencode.json"
+        "build/.opencode/opencode-mem.jsonc"
+        "build/.opencode/opencode-mem.web.jsonc"
         "build/.opencode-checksums"
         "build/etc/opencode/opencode.jsonc"
         "build/skills-lock.json"
