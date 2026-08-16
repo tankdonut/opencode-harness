@@ -8,6 +8,11 @@
   "automergeStrategy": "squash",
   "packageRules": [
     {
+      "description": "Tools container digest updates have no release timestamp; exempt from minimumReleaseAge.",
+      "matchDepNames": ["ghcr.io/tankdonut/tools"],
+      "minimumReleaseAge": null
+    },
+    {
       "description": "Automerge non-major updates after passing CI and approval.",
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true
