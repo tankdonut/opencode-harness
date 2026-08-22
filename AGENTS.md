@@ -303,7 +303,7 @@ The entrypoint selectively enables each optional skill collection at container s
 | `ECC_ENABLED` | Runtime install of `everything-claude-code` skills via skills.sh CLI (default: disabled) |
 | `SUPERPOWERS_ENABLED` | Runtime install of `superpowers` skills via skills.sh CLI (default: disabled) |
 
-Additionally, `OMO_CLAUDE` / `OMO_GEMINI` / `OMO_COPILOT` / `OMO_OPENAI` / `OMO_OPENCODE_GO` / `OMO_OPENCODE_ZEN` / `OMO_ZAI_CODING_PLAN` (values: `yes`/`no`/`max20`) pass **subscription toggles** to `bunx oh-my-opencode install` at runtime — they control which LLM models are added to agent fallback chains, NOT authentication. `OMO_FORCE=yes` forces reinstall.
+Additionally, `OMO_CLAUDE` / `OMO_GEMINI` / `OMO_COPILOT` / `OMO_OPENAI` / `OMO_OPENCODE_GO` / `OMO_OPENCODE_ZEN` / `OMO_ZAI_CODING_PLAN` (values: `yes`/`no`/`max20`) pass **subscription toggles** to `bunx oh-my-openagent install` at runtime — they control which LLM models are added to agent fallback chains, NOT authentication. `OMO_FORCE=yes` forces reinstall.
 
 > **Compose users:** `compose.yml` surfaces all of the above env vars (plus `ZHIPU_API_KEY`, `OPENCODE_THEME`, bootstrap force, telemetry flags, and the opencode-mem web UI toggles) through `.env`. Copy `.env.example` to `.env` and edit values there instead of passing `-e` flags on every run. See `docs/guides/usage.md` for the compose workflow.
 

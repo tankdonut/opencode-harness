@@ -131,12 +131,12 @@ The container splits its filesystem into two distinct directories with separate 
 
 | Path | Mount Type | Contents |
 | ------ | ----------- | ---------- |
-| `/home/opencode` | Named volume (container HOME) | Bun JIT cache, sessions, auth.json, `.opencode/` config+themes, `.agents/skills` symlink, oh-my-opencode config |
+| `/home/opencode` | Named volume (container HOME) | Bun JIT cache, sessions, auth.json, `.opencode/` config+themes, `.agents/skills` symlink, Oh My OpenAgent config |
 | `/workspace` | Bind mount (host project) | Your source code, checked-out repos, working files |
 
 **Why the split exists:** Bun standalone binaries need a writable HOME directory for JIT compilation and cache writes. When `/workspace` was the container HOME, bind-mounting a host directory there would shadow the HOME and break those writes (host-owned UIDs differ from the container's `opencode` user). The split ensures container state never depends on host mount permissions.
 
-The entrypoint copies config defaults (opencode.json, tui.json, themes/) from the read-only image source (`/opencode/default/`) into the writable `$HOME/.opencode/` at container start, then exports `OPENCODE_CONFIG` to point there. This means `oh-my-opencode install` can write its config alongside, and user customizations persist in the named volume across container restarts. Skills are exposed through a symlink: `$HOME/.agents/skills` points to `/opencode/default/.agents/skills/`. Nothing is written to the bind-mounted `/workspace`.
+The entrypoint copies config defaults (opencode.json, tui.json, themes/) from the read-only image source (`/opencode/default/`) into the writable `$HOME/.opencode/` at container start, then exports `OPENCODE_CONFIG` to point there. This means `oh-my-openagent install` can write its config alongside, and user customizations persist in the named volume across container restarts. Skills are exposed through a symlink: `$HOME/.agents/skills` points to `/opencode/default/.agents/skills/`. Nothing is written to the bind-mounted `/workspace`.
 
 ## Memory Plugin (opencode-mem)
 
@@ -205,7 +205,7 @@ podman run -it --rm opencoder
 
 ### OMO Subscription Flags
 
-The entrypoint passes subscription flags to `bunx oh-my-opencode install` at container start. Set these to configure which LLM subscriptions to declare:
+The entrypoint passes subscription flags to `bunx oh-my-openagent install` at container start. Set these to configure which LLM subscriptions to declare:
 
 - `OMO_CLAUDE` — Claude subscription (`yes|no|max20`)
 - `OMO_GEMINI` — Gemini subscription (`yes|no`)
@@ -215,9 +215,9 @@ The entrypoint passes subscription flags to `bunx oh-my-opencode install` at con
 - `OMO_OPENCODE_ZEN` — OpenCode Zen subscription (`yes|no`)
 - `OMO_ZAI_CODING_PLAN` — ZAI Coding Plan subscription (`yes|no`)
 
-Set `OMO_FORCE=yes` to force reinstall of oh-my-opencode regardless of existing state.
+Set `OMO_FORCE=yes` to force reinstall of Oh My OpenAgent regardless of existing state.
 
-> **Note:** `OMO_*` flags are **subscription toggles**, not credentials. They tell oh-my-opencode which models to add to agent fallback chains. Authentication is handled separately via environment variables (see below).
+> **Note:** `OMO_*` flags are **subscription toggles**, not credentials. They tell Oh My OpenAgent which models to add to agent fallback chains. Authentication is handled separately via environment variables (see below).
 
 ## Provider Authentication
 

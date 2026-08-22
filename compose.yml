@@ -54,7 +54,7 @@ services:
       - ECC_ENABLED=${ECC_ENABLED:-0}
       - SUPERPOWERS_ENABLED=${SUPERPOWERS_ENABLED:-0}
 
-      # === Oh-My-OpenCode Subscription Flags ===
+      # === Oh My OpenAgent Subscription Flags ===
       # Control which LLM models are added to agent fallback chains.
       # These are NOT credentials - they control model availability.
       - OMO_CLAUDE=${OMO_CLAUDE:-no}

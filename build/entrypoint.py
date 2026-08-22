@@ -4,7 +4,7 @@
 # Runs inside the container at every `podman run` (ENTRYPOINT, never at build
 # time). Validates the environment, bootstraps OpenCode config into a writable
 # HOME, links baseline skills, optionally installs opt-in skill sets and
-# oh-my-opencode, then execs the container CMD.
+# oh-my-openagent, then execs the container CMD.
 #
 # Ported 1:1 from the former bash entrypoint.sh. Behavioral contract:
 #   - All logs go to stderr; stdout stays clean.
@@ -81,7 +81,7 @@ _TRUTHY: Final = frozenset({"1", "true", "yes"})
 #   ECC_ENABLED=1          → install everything-claude-code skills
 #   SUPERPOWERS_ENABLED=1  → install superpowers skills
 # Both default to disabled; oh-my-openagent skills are always baked in.
-# Oh-My-OpenCode (OMO) options: OMO_FORCE forces reinstall; OMO_CLAUDE /
+# Oh My OpenAgent (OMO) options: OMO_FORCE forces reinstall; OMO_CLAUDE /
 # OMO_GEMINI / OMO_COPILOT / OMO_OPENAI / OMO_OPENCODE_GO / OMO_OPENCODE_ZEN /
 # OMO_ZAI_CODING_PLAN (yes|no, OMO_CLAUDE also max20) pick subscriptions.
 
@@ -294,7 +294,7 @@ def copy_mem_config() -> bool:
     return True
 
 
-# --- Oh-My-OpenCode installation ---------------------------------------------
+# --- Oh My OpenAgent installation ---------------------------------------------
 
 _OMO_SUBSCRIPTION_FLAGS: Final = (
     ("claude", "OMO_CLAUDE"),
@@ -307,9 +307,9 @@ _OMO_SUBSCRIPTION_FLAGS: Final = (
 )
 
 
-def install_oh_my_opencode() -> bool:
-    """Run `bunx oh-my-opencode install` unless ~/.omo/omo.jsonc already exists."""
-    log("Oh-My-OpenCode installation enabled")
+def install_oh_my_openagent() -> bool:
+    """Run `bunx oh-my-openagent install` unless ~/.omo/omo.jsonc already exists."""
+    log("Oh My OpenAgent installation enabled")
 
     omo_config = Path(HOME) / ".omo" / "omo.jsonc"
 
@@ -322,15 +322,15 @@ def install_oh_my_opencode() -> bool:
     else:
         log("OMO config not found, will install")
 
-    cmd = ["bunx", "oh-my-opencode", "install", "--no-tui"]
+    cmd = ["bunx", "oh-my-openagent", "install", "--no-tui"]
     cmd += [f"--{flag}={os.environ.get(var, 'no')}" for flag, var in _OMO_SUBSCRIPTION_FLAGS]
 
     log(f"Running: {' '.join(cmd)}")
     if not _run_to_stderr(cmd):
-        log_error("Oh-My-OpenCode installation failed")
+        log_error("Oh My OpenAgent installation failed")
         return False
 
-    log_success("Oh-My-OpenCode installed successfully")
+    log_success("Oh My OpenAgent installed successfully")
     if omo_config.is_file():
         log(f"Config created at: {omo_config}")
     else:
@@ -589,9 +589,9 @@ def main(argv: Sequence[str]) -> int:
 
         _require(validate_config(), "config validation")
 
-        if not install_oh_my_opencode():
+        if not install_oh_my_openagent():
             log_warn(
-                "Oh-My-OpenCode installation failed "
+                "Oh My OpenAgent installation failed "
                 "(orchestrator features unavailable; container continues)"
             )
 

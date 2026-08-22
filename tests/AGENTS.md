@@ -61,7 +61,7 @@ entrypoint.py's `if __name__ == "__main__"` guard prevents `main()` from executi
 
 ## Known Issues
 
-1. **No coverage for**: `copy_theme_config`, `bootstrap_config` (the full orchestration), `install_oh_my_opencode`, `validate_environment`, `validate_config`, `sync_skills` (the symlink *pattern* is tested; the function itself uses absolute container paths like `/opencode/default/` and needs a real container — that's container-test.sh territory).
+1. **No coverage for**: `copy_theme_config`, `bootstrap_config` (the full orchestration), `install_oh_my_openagent`, `validate_environment`, `validate_config`, `sync_skills` (the symlink *pattern* is tested; the function itself uses absolute container paths like `/opencode/default/` and needs a real container — that's container-test.sh territory).
 
 ## Adding New Tests
 

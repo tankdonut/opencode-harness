@@ -85,7 +85,7 @@ bootstrap_config      → copy_config + copy_theme_config (defaults from /openco
 copy_mem_config       → seed opencode-mem.jsonc → $HOME/.config/opencode/ (plugin's global discovery path; soft-fail)
 sync_skills           → symlink $HOME/.agents/skills → /opencode/default/.agents/skills/
 validate_config       → jq empty + plugin count > 0
-install_oh_my_opencode → bunx oh-my-opencode install (7 flags: OMO_CLAUDE/OMO_GEMINI/OMO_COPILOT/OMO_OPENAI/OMO_OPENCODE_GO/OMO_OPENCODE_ZEN/OMO_ZAI_CODING_PLAN; OMO_FORCE=yes forces) (warns on failure, non-fatal)
+install_oh_my_openagent → bunx oh-my-openagent install (7 flags: OMO_CLAUDE/OMO_GEMINI/OMO_COPILOT/OMO_OPENAI/OMO_OPENCODE_GO/OMO_OPENCODE_ZEN/OMO_ZAI_CODING_PLAN; OMO_FORCE=yes forces) (warns on failure, non-fatal)
 install_optional_skills → ECC/superpowers runtime install when ECC_ENABLED/SUPERPOWERS_ENABLED set (network required)
 verify_installation   → final checks
 print_summary
@@ -125,7 +125,7 @@ Skills ship through two distinct mechanisms, layered on top of the npm plugin lo
 | **OpenCode plugin loader** | Fetches npm packages at runtime | `.opencode/opencode.json` plugin[] |
 | **Build-time skills (baseline)** | `oh-my-openagent` skills baked into the image via `npx skills experimental_install` | `skills-lock.json` → `/opencode/default/.agents/skills/` |
 | **Runtime skills (opt-in)** | ECC / superpowers skills fetched at container start | entrypoint `install_optional_skills` via `npx skills add` |
-| **`bunx oh-my-opencode install`** | Installs multi-agent orchestrator | npm package `oh-my-opencode` (NOT `oh-my-openagent`) |
+| **`bunx oh-my-openagent install`** | Installs multi-agent orchestrator | npm package `oh-my-openagent` (`oh-my-opencode` is a legacy alias of the same package) |
 
 ### Plugin ↔ Skill Source Mapping (LOOSE)
 
